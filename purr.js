@@ -243,7 +243,7 @@ Purr.prototype.init = function() {
         if (this.isDick(context)) context.channel.send_reply(context.sender, "thank you! ^_^");
     });
 
-	this.register_listener(/purr.*(?:hi|hello)|(?:hi|hello).*purr|^\s*hi\s*$/i, function(context) {
+	this.register_listener(/purr.*\b(?:hi|hello)\b|\b(?:hi|hello)\b.*purr|^\s*hi\s*$/i, function(context) {
 		if (this.isDick(context)) context.channel.send_reply(context.sender, "hi!");
 	});
 
