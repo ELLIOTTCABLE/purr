@@ -161,6 +161,12 @@ Purr.prototype.init = function() {
                      , Math.floor(Math.random() * 4000))
     });
     
+    this.register_listener(/^https?:\/\//, function(context) { stressor(context)
+        if (this.isDick())
+            if (context.sender.name.match(/akshatj/))
+                context.channel.send_reply(context.sender, "STOP DOING THAT.")
+    });
+    
     this.register_command("access", function(context, text) {
         if (context.priv && text === this.password) {
             context.sender.access = true;
