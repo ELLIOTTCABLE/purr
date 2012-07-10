@@ -115,7 +115,7 @@ Purr.prototype.init = function() {
     this.register_command("find", Shared.find.bind(this));
     this.register_command("learn", function (context) {
        if (context.sender.name === "gqbrielle" || context.sender.name === "mix") {
-          var today = new Date().getUTCTime()/86400|0;
+          var today = new Date().getTime()/86400|0;
 
           if (this.gqLearnDay !== today) {
              this.gqLearn = 0;
