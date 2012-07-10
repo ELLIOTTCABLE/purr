@@ -112,7 +112,7 @@ Purr.prototype.init = function() {
     });
 
     this.register_command("topic", Shared.topic);
-    this.register_command("find", Shared.find);
+    this.register_command("find", Shared.find.bind(this));
     this.register_command("learn", Shared.learn, {allow_intentions: false});
     this.register_command("forget", Shared.forget, {allow_intentions: false});
     this.register_command("commands", Shared.commands);
@@ -143,6 +143,7 @@ Purr.prototype.init = function() {
 			this.what.object.push("<" + subject + "> " + object);
 		}
 		this.what.activity();
+               context.channel.send('beep.')
 	});
 
 	this.register_command("what", function(context) {
@@ -158,12 +159,6 @@ Purr.prototype.init = function() {
         if (this.isDick())
             setTimeout(function(){ context.channel.send_action(new Array(Math.floor(Math.random() * 7) + 2).join('r')) }
                      , Math.floor(Math.random() * 4000))
-    });
-    
-    this.register_listener(/^https?:\/\//, function(context) { stressor(context)
-        if (this.isDick())
-            if (context.sender.name.match(/akshatj/))
-                context.channel.send_reply(context.sender, "STOP DOING THAT.")
     });
     
     this.register_command("access", function(context, text) {
