@@ -113,7 +113,24 @@ Purr.prototype.init = function() {
 
     this.register_command("topic", Shared.topic);
     this.register_command("find", Shared.find.bind(this));
-    this.register_command("learn", Shared.learn, {allow_intentions: false});
+    this.register_command("learn", function (context) {
+       if (context.sender.name === "gqbrielle" || context.sender.name === "mix") {
+          var today = new Date().getUTCTime()/86400|0;
+
+          if (this.gqLearnDay !== today) {
+             this.gqLearn = 0;
+             this.gqLearnDay = today;
+          }
+
+          if (this.gqLearn++ > 10) {
+             context.channel.send_reply(context.sender, "I think you've had enough for one day.");
+          } else {
+            Shared.learn.apply(this, arguments);
+          }
+       } else {
+         Shared.learn.apply(this, arguments);
+       }
+    }, {allow_intentions: false});
     this.register_command("forget", Shared.forget, {allow_intentions: false});
     this.register_command("commands", Shared.commands);
     this.register_command("g", Shared.google);
