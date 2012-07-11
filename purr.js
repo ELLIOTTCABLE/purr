@@ -299,6 +299,11 @@ Purr.prototype.init = function() {
         this.love(context, context.sender.name, loved.trim(), -1);
     }, {allow_intentions: false});
 
+    /* workaround for '-' prefix */
+    this.register_command("-", function(context, loved) {
+        this.love(context, context.sender.name, loved.trim(), -1);
+    }, {allow_intentions: false});
+
     this.register_listener(/^(?:\x01ACTION )?(?:<3|\u2665) +(.+)(?:\x01)?$/, function(context, text, loved) {
 	this.love(context, context.sender.name, loved.trim(), +1, {love:" hearts ",hard:true});
     }, {allow_intentions: false});
