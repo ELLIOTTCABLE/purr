@@ -164,6 +164,7 @@ Purr.prototype.init = function() {
 	});
 
 	this.register_command("what", function(context) {
+                if (!this.isDick()) return;
 		var a = this.what.object;
 		if (a.length > 0) {
 			context.channel.send_reply(context.intent, a[Math.random()*a.length | 0]);
