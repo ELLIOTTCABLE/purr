@@ -634,8 +634,13 @@ Purr.prototype.love = function(context, lover, loved, d, opts) {
     if (!l[lover]) l[lover] = {};
     var c = opts.hard ? 0 : l[lover][loved] || 0;
 
+    if ((c == 0 || c == 1) && d == 1 && loved.match(new RegExp('^'+lover+'$', 'i'))) {
+        if (this.isDick()) context.channel.send("Let it be known that " + lover + " is an egotistical prick.");
+	return;
+    }
+
     if ((c == 0 || c == 1) && d == 1 && loved.match(/^php$/i)) {
-	context.channel.send(lover + ": I think you meant '-- PHP'.");
+	if (this.isDick()) context.channel.send(lover + ": I think you meant '-- PHP'.");
 	c = 0; d = -1;
     }
 
