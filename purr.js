@@ -256,8 +256,8 @@ Purr.prototype.init = function() {
         }
     });
 
-    this.register_listener(/\blol\b/i, function(context) {
-        if (this.isDick(context)) context.channel.send("lol");
+    this.register_listener(/\b(\w*lol\w*)\b/i, function(context, text, word) {
+        if (this.isDick(context)) context.channel.send(word);
     });
 
     this.register_listener(/get along/, function(context) {
