@@ -163,6 +163,13 @@ Purr.prototype.init = function() {
                context.channel.send('beep.')
 	});
 
+	this.register_listener(/^\+what < *([^> ]+) *> +(.*)$/i,
+	function(context, text, subject, object) {
+        this.what.object.push("<" + subject + "> " + object);
+		this.what.activity();
+       context.channel.send('beep.')
+	});
+
 	this.register_command("what", function(context) {
                 if (!this.isDick()) return;
 		var a = this.what.object;
