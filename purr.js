@@ -170,15 +170,16 @@ Purr.prototype.init = function() {
        context.channel.send('beep.')
 	});
 
-	this.register_command("what", function(context) {
+	this.what.random = function(context) {
                 if (!this.isDick()) return;
 		var a = this.what.object;
 		if (a.length > 0) {
-			context.channel.send_reply(context.intent, a[Math.random()*a.length | 0]);
+			context.channel.send(a[Math.random()*a.length | 0]);
 		} else {
 			context.channel.send_reply(context.sender, "no data");
 		}
-	});
+	}
+	this.register_command("what", this.what.random);
     
     this.register_listener(/^\x01ACTION [^\x01]*purr[^\x01]*\x01$/, function(context) {
         if (this.isDick())
@@ -280,11 +281,16 @@ Purr.prototype.init = function() {
         }
     });
 
-    this.register_command("start", function(context) {
-        var now = +new Date();
+    this.register_command("start", function(context) { var that = this
         if (!this.isDick()) {
             delete this.annoyban;
         }
+        
+        var what = function(){
+            if (that.isDick()) that.what.random.call(that, context)
+            setTimeout(what, Math.random() * 86400 * 1000)
+        }
+        if (!this.what.timerID) this.what.timerID = setTimeout(what, Math.random() * 86400 * 1000)
     });
 
     this.register_command("dick", function(context) {
