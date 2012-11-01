@@ -160,7 +160,7 @@ Purr.prototype.init = function() {
 			this.what.object.push("<" + subject + "> " + object);
 		}
 		this.what.activity();
-               context.channel.send('beep.')
+               if (this.isDick()) context.channel.send('beep.')
 	});
 
 	this.register_listener(/^\+what < *([^> ]+) *> +(.*)$/i,
