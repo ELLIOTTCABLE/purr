@@ -160,7 +160,7 @@ Purr.prototype.init = function() {
 			this.what.object.push("<" + subject + "> " + object);
 		}
 		this.what.activity();
-               if (this.isDick()) context.channel.send('beep.')
+               if (this.isDick(context)) context.channel.send('beep.')
 	});
 
 	this.register_listener(/^\+what < *([^> ]+) *> +(.*)$/i,
@@ -171,7 +171,7 @@ Purr.prototype.init = function() {
 	});
 
 	this.what.random = function(context) {
-                if (!this.isDick()) return;
+                if (!this.isDick(context)) return;
 		var a = this.what.object;
 		if (a.length > 0) {
 			context.channel.send(a[Math.random()*a.length | 0]);
@@ -182,7 +182,7 @@ Purr.prototype.init = function() {
 	this.register_command("what", this.what.random);
     
     this.register_listener(/^\x01ACTION [^\x01]*purr[^\x01]*\x01$/, function(context) {
-        if (this.isDick())
+        if (this.isDick(context))
             setTimeout(function(){ context.channel.send_action(new Array(Math.floor(Math.random() * 7) + 2).join('r')) }
                      , Math.floor(Math.random() * 4000))
     });
@@ -275,19 +275,19 @@ Purr.prototype.init = function() {
 
     this.register_command("stop", function(context) {
         var now = +new Date();
-        if (this.isDick()) {
+        if (this.isDick(context)) {
             this.annoyban = +new Date();
 			clearInterval (this.countdown_timer);
         }
     });
 
     this.register_command("start", function(context) { var that = this
-        if (!this.isDick()) {
+        if (!this.isDick(context)) {
             delete this.annoyban;
         }
         
         var what = function(){
-            if (that.isDick()) that.what.random.call(that, context)
+            if (that.isDick(context)) that.what.random.call(that, context)
             setTimeout(what, Math.random() * 86400 * 1000)
         }
         if (!this.what.timerID) this.what.timerID = setTimeout(what, Math.random() * 86400 * 1000)
@@ -295,7 +295,7 @@ Purr.prototype.init = function() {
 
     this.register_command("dick", function(context) {
         var now = +new Date();
-        if (!this.isDick()) {
+        if (!this.isDick(context)) {
             var sol = new Sol((this.annoyban-now)/86400000+1, false);
             context.channel.send_reply(context.intent, "I'll be a dick in " +
                                        sol.toStupidString() + " (" + sol.toString() +
@@ -419,7 +419,7 @@ Purr.prototype.init = function() {
     this.countdown_timer = null;
 
     this.register_command("countdown", function(context, text) {
-        if (this.isDick()) {
+        if (this.isDick(context)) {
             var length, decrement, self = this;
             
             if (text === "stop") {
@@ -496,7 +496,7 @@ Purr.prototype.init = function() {
     var kicked = {};
     
     this.register_command ("kick", function(context, text) {
-	if (this.isDick()) {
+	if (this.isDick(context)) {
             var channel = context.channel, userlist, client = context.client;
             
             if (context.priv) {
@@ -518,7 +518,7 @@ Purr.prototype.init = function() {
     
     
     this.register_command("twister", function(context) {
-	if (this.isDick()) {
+	if (this.isDick(context)) {
             context.channel.send(
 		rand(["Left ", "Right "]) +
                 rand(["foot on ", "hand on "]) +
@@ -641,23 +641,23 @@ Purr.prototype.love = function(context, lover, loved, d, opts) {
     var c = opts.hard ? 0 : l[lover][loved] || 0;
 
     if ((c == 0 || c == 1) && d == 1 && loved.match(new RegExp('^'+lover+'$', 'i'))) {
-        if (this.isDick()) context.channel.send("Let it be known that " + lover + " is an egotistical prick.");
+        if (this.isDick(context)) context.channel.send("Let it be known that " + lover + " is an egotistical prick.");
 	return;
     }
 
     if ((c == 0 || c == 1) && d == 1 && loved.match(/^php$/i)) {
-	if (this.isDick()) context.channel.send(lover + ": I think you meant '-- PHP'.");
+	if (this.isDick(context)) context.channel.send(lover + ": I think you meant '-- PHP'.");
 	c = 0; d = -1;
     }
 
     if (c + d > 0) {
-        if (this.isDick()) context.channel.send("Let it be known that " + lover + opts.love + loved + ".");
+        if (this.isDick(context)) context.channel.send("Let it be known that " + lover + opts.love + loved + ".");
         l[lover][loved] = +1;
     } else if (c + d < 0) {
-        if (this.isDick()) context.channel.send("Let it be known that " + lover + opts.hate + loved + ".");
+        if (this.isDick(context)) context.channel.send("Let it be known that " + lover + opts.hate + loved + ".");
         l[lover][loved] = -1;
     } else {
-        if (this.isDick()) context.channel.send("Let it be known that " + lover + opts.zero + loved + ".");
+        if (this.isDick(context)) context.channel.send("Let it be known that " + lover + opts.zero + loved + ".");
         delete l[lover][loved];
     }
     this.loves.activity();
