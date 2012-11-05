@@ -288,9 +288,9 @@ Purr.prototype.init = function() {
         
         var what = function(){
             if (that.isDick(context)) that.what.random.call(that, context)
-            setTimeout(what, Math.random() * 86400 * 1000)
+            setTimeout(what, Math.random() * 21600 * 1000)
         }
-        if (!this.what.timerID) this.what.timerID = setTimeout(what, Math.random() * 86400 * 1000)
+        if (!this.what.timerID) this.what.timerID = setTimeout(what, Math.random() * 21600 * 1000)
     });
 
     this.register_command("dick", function(context) {
