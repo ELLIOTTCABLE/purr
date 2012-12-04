@@ -491,6 +491,106 @@ Purr.prototype.init = function() {
         c.channel.send_reply(c.intent,
                              "Paws code executed sucessfully. (no output)");
     });
+
+    // I am ashamed of this code. Please kill me. -devyn
+
+    this.register_listener(/^bf> (.*)/, function (context, _, code) {
+
+    /*
+    * var context = {channel: {send_reply: function(_, msg) { console.log(msg); }}};
+    * module.exports.bf = function(code) {
+    * */
+
+    var memZeroPos = [0]
+        , memNeg     = []
+        , curCell    = 0
+        , curChr     = 0
+        , jumpStack  = []
+        , input      = ""
+        , inputPos   = 0
+        , output     = ""
+        ;
+
+    code = code.replace(/!(.*)$/, function (_, match) {
+        input = match;
+        return "";
+    });
+
+    for (; curChr < code.length; curChr++) {
+        switch (code[curChr]) {
+        case '>':
+            curCell++;
+            break;
+        case '<':
+            curCell--;
+            break;
+        case '+':
+            if (curCell >= 0) {
+            if (typeof memZeroPos[curCell] === 'undefined') memZeroPos[curCell] = 0;
+            memZeroPos[curCell]++;
+            } else {
+            if (typeof memNeg[1 - curCell] === 'undefined') memNeg[1 - curCell] = 0;
+            memNeg[1 - curCell]++;
+            }
+            break;
+        case '-':
+            if (curCell >= 0) {
+            if (typeof memZeroPos[curCell] === 'undefined') memZeroPos[curCell] = 0;
+            memZeroPos[curCell]--;
+            } else {
+            if (typeof memNeg[1 - curCell] === 'undefined') memNeg[1 - curCell] = 0;
+            memNeg[1 - curCell]--;
+            }
+            break;
+        case '[':
+            jumpStack.push(curChr);
+            break;
+        case ']':
+            if (parseInt(curCell >= 0 ? memZeroPos[curCell] : memNeg[1 - curCell], 10) == 0) {
+            jumpStack.pop();
+            } else {
+            curChr = jumpStack[jumpStack.length - 1];
+            }
+            break;
+        case ',':
+            if (curCell >= 0) {
+            memZeroPos[curCell] = inputPos < input.length ? input.charCodeAt(inputPos++) : 0;
+            } else {
+            memNeg[1 - curCell] = inputPos < input.length ? input.charCodeAt(inputPos++) : 0;
+            }
+            break;
+        case '.':
+            output += String.fromCharCode(curCell >= 0 ? memZeroPos[curCell] : memZeroPos[1 - curCell]);
+            break;
+        }
+    }
+
+    var memoryString = "";
+
+    for (var i = 0; i < memNeg.length; i++) {
+        if ((1 - i) == curCell) {
+        memoryString += "[" + parseInt(memNeg[i], 10) + "] ";
+        } else {
+        memoryString += "" + parseInt(memNeg[i], 10) + " ";
+        }
+    }
+    for (var j = 0; j < memZeroPos.length; j++) {
+        if (j == curCell) {
+        memoryString += "[" + parseInt(memZeroPos[j], 10) + "] ";
+        } else {
+        memoryString += "" + parseInt(memZeroPos[j], 10) + " ";
+        }
+    }
+
+    if (output) {
+        context.channel.send_reply(context.intent, memoryString.replace(/ $/, ". ") + "Output: " + JSON.stringify(output));
+    } else {
+        context.channel.send_reply(context.intent, memoryString);
+    }
+
+    //}
+
+    });
     
     
     var kicked = {};
