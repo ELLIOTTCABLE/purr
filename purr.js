@@ -501,6 +501,8 @@ Purr.prototype.init = function() {
     * module.exports.bf = function(code) {
     * */
 
+    var timeout = setTimeout(function () { timeout = null }, 3000);
+
     var memZeroPos = [0]
         , memNeg     = []
         , curCell    = 0
@@ -516,7 +518,7 @@ Purr.prototype.init = function() {
         return "";
     });
 
-    for (; curChr < code.length; curChr++) {
+    for (; timeout !== null && curChr < code.length; curChr++) {
         switch (code[curChr]) {
         case '>':
             curCell++;
@@ -563,6 +565,11 @@ Purr.prototype.init = function() {
             output += String.fromCharCode(curCell >= 0 ? memZeroPos[curCell] : memZeroPos[1 - curCell]);
             break;
         }
+    }
+
+    if (timeout === null) {
+      context.channel.send_reply(context.sender, "Timeout exceeded.");
+      return;
     }
 
     var memoryString = "";
