@@ -501,24 +501,24 @@ Purr.prototype.init = function() {
     * module.exports.bf = function(code) {
     * */
 
-    var timeout = setTimeout(function () { timeout = null }, 3000);
+    var startTime = Date.now();
 
     var memZeroPos = [0]
-        , memNeg     = []
-        , curCell    = 0
-        , curChr     = 0
-        , jumpStack  = []
-        , input      = ""
-        , inputPos   = 0
-        , output     = ""
-        ;
+      , memNeg     = []
+      , curCell    = 0
+      , curChr     = 0
+      , jumpStack  = []
+      , input      = ""
+      , inputPos   = 0
+      , output     = ""
+      ;
 
     code = code.replace(/!(.*)$/, function (_, match) {
         input = match;
         return "";
     });
 
-    for (; timeout !== null && curChr < code.length; curChr++) {
+    for (; (Date.now() - startTime) <= 3000 && curChr < code.length; curChr++) {
         switch (code[curChr]) {
         case '>':
             curCell++;
@@ -567,7 +567,7 @@ Purr.prototype.init = function() {
         }
     }
 
-    if (timeout === null) {
+    if ((Date.now() - startTime) > 3000) {
       context.channel.send_reply(context.sender, "Timeout exceeded.");
       return;
     }
