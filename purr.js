@@ -501,103 +501,110 @@ Purr.prototype.init = function() {
     * module.exports.bf = function(code) {
     * */
 
-    var startTime = Date.now();
+        var startTime = Date.now();
 
-    var memZeroPos = [0]
-      , memNeg     = []
-      , curCell    = 0
-      , curChr     = 0
-      , jumpStack  = []
-      , input      = ""
-      , inputPos   = 0
-      , output     = ""
-      ;
+        var memZeroPos = [0]
+        , memNeg     = []
+        , curCell    = 0
+        , curChr     = 0
+        , jumpStack  = []
+        , input      = ""
+        , inputPos   = 0
+        , output     = ""
+        ;
 
-    code = code.replace(/!(.*)$/, function (_, match) {
-        input = match;
-        return "";
-    });
+        code = code.replace(/!(.*)$/, function (_, match) {
+            input = match;
+            return "";
+        });
 
-    for (; (Date.now() - startTime) <= 3000 && curChr < code.length; curChr++) {
-        switch (code[curChr]) {
-        case '>':
-            curCell++;
-            break;
-        case '<':
-            curCell--;
-            break;
-        case '+':
-            if (curCell >= 0) {
-            if (typeof memZeroPos[curCell] === 'undefined') memZeroPos[curCell] = 0;
-            memZeroPos[curCell]++;
-            } else {
-            if (typeof memNeg[1 - curCell] === 'undefined') memNeg[1 - curCell] = 0;
-            memNeg[1 - curCell]++;
+        for (; (Date.now() - startTime) <= 3000 && curChr < code.length; curChr++) {
+            switch (code[curChr]) {
+            case '>':
+                curCell++;
+                if (curCell >= 0) {
+                if (typeof memZeroPos[curCell] === 'undefined') memZeroPos[curCell] = 0;
+                } else {
+                if (typeof memNeg[-curCell - 1] === 'undefined') memNeg[-curCell - 1] = 0;
+                }
+                break;
+            case '<':
+                curCell--;
+                if (curCell >= 0) {
+                if (typeof memZeroPos[curCell] === 'undefined') memZeroPos[curCell] = 0;
+                } else {
+                if (typeof memNeg[-curCell - 1] === 'undefined') memNeg[-curCell - 1] = 0;
+                }
+                break;
+            case '+':
+                if (curCell >= 0) {
+                    memZeroPos[curCell]++;
+                } else {
+                    memNeg[-curCell - 1]++;
+                }
+                break;
+            case '-':
+                if (curCell >= 0) {
+                    memZeroPos[curCell]--;
+                } else {
+                    memNeg[-curCell - 1]--;
+                }
+                break;
+            case '[':
+                jumpStack.push(curChr);
+                break;
+            case ']':
+                if (parseInt(curCell >= 0 ? memZeroPos[curCell] : memNeg[-curCell - 1], 10) == 0) {
+                    jumpStack.pop();
+                } else {
+                    curChr = jumpStack[jumpStack.length - 1];
+                }
+                break;
+            case ',':
+                if (curCell >= 0) {
+                    memZeroPos[curCell] = inputPos < input.length ? input.charCodeAt(inputPos++) : 0;
+                } else {
+                    memNeg[-curCell - 1] = inputPos < input.length ? input.charCodeAt(inputPos++) : 0;
+                }
+                break;
+            case '.':
+                output += String.fromCharCode(curCell >= 0 ? memZeroPos[curCell] : memZeroPos[-curCell - 1]);
+                break;
             }
-            break;
-        case '-':
-            if (curCell >= 0) {
-            if (typeof memZeroPos[curCell] === 'undefined') memZeroPos[curCell] = 0;
-            memZeroPos[curCell]--;
-            } else {
-            if (typeof memNeg[1 - curCell] === 'undefined') memNeg[1 - curCell] = 0;
-            memNeg[1 - curCell]--;
-            }
-            break;
-        case '[':
-            jumpStack.push(curChr);
-            break;
-        case ']':
-            if (parseInt(curCell >= 0 ? memZeroPos[curCell] : memNeg[1 - curCell], 10) == 0) {
-            jumpStack.pop();
-            } else {
-            curChr = jumpStack[jumpStack.length - 1];
-            }
-            break;
-        case ',':
-            if (curCell >= 0) {
-            memZeroPos[curCell] = inputPos < input.length ? input.charCodeAt(inputPos++) : 0;
-            } else {
-            memNeg[1 - curCell] = inputPos < input.length ? input.charCodeAt(inputPos++) : 0;
-            }
-            break;
-        case '.':
-            output += String.fromCharCode(curCell >= 0 ? memZeroPos[curCell] : memZeroPos[1 - curCell]);
-            break;
         }
-    }
 
-    if ((Date.now() - startTime) > 3000) {
-      context.channel.send_reply(context.sender, "Timeout exceeded.");
-      return;
-    }
+        if ((Date.now() - startTime) > 3000) {
+        context.channel.send_reply(context.sender, "Timeout exceeded.");
+        return;
+        }
 
-    var memoryString = "";
+        var memoryString = "";
 
-    for (var i = 0; i < memNeg.length; i++) {
-        if ((1 - i) == curCell) {
-        memoryString += "[" + parseInt(memNeg[i], 10) + "] ";
+        for (var i = memNeg.length - 1; i >= 0; i--) {
+            if ((-i - 1) == curCell) {
+                memoryString += "[" + parseInt(memNeg[i], 10) + "] ";
+            } else {
+                memoryString += "" + parseInt(memNeg[i], 10) + " ";
+            }
+        }
+        for (var j = 0; j < memZeroPos.length; j++) {
+            if (j == curCell) {
+                memoryString += "[" + parseInt(memZeroPos[j], 10) + "] ";
+            } else {
+                memoryString += "" + parseInt(memZeroPos[j], 10) + " ";
+            }
+        }
+
+        if (output) {
+            context.channel.send_reply(context.intent, memoryString.replace(/ $/, ". ") + "Output: " + JSON.stringify(output));
         } else {
-        memoryString += "" + parseInt(memNeg[i], 10) + " ";
+            context.channel.send_reply(context.intent, memoryString);
         }
-    }
-    for (var j = 0; j < memZeroPos.length; j++) {
-        if (j == curCell) {
-        memoryString += "[" + parseInt(memZeroPos[j], 10) + "] ";
-        } else {
-        memoryString += "" + parseInt(memZeroPos[j], 10) + " ";
-        }
-    }
-
-    if (output) {
-        context.channel.send_reply(context.intent, memoryString.replace(/ $/, ". ") + "Output: " + JSON.stringify(output));
-    } else {
-        context.channel.send_reply(context.intent, memoryString);
-    }
 
     //}
 
     });
+
     
     
     var kicked = {};
