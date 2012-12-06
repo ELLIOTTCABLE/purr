@@ -14,6 +14,8 @@ var FactoidServer = require("./lib/factoidserv");
 var JSONSaver     = require("./lib/jsonsaver");
 var FeelingLucky  = require("./lib/feelinglucky");
 
+var paws  = require("./lib/nanopaws");
+
 var Shared = require("./shared");
 
 String.prototype.repeat = function(i) {
@@ -290,7 +292,7 @@ Purr.prototype.init = function() {
             if (that.isDick(context)) that.what.random.call(that, context)
             setTimeout(what, Math.random() * 21600 * 1000)
         }
-        if (!this.what.timerID) this.what.timerID = setTimeout(what, Math.random() * 21600 * 1000)
+        if (!this.what.timerID) this.what.timerID = setTimeout(what, Math.random() * 172800 * 1000)
     });
 
     this.register_command("dick", function(context) {
@@ -487,9 +489,26 @@ Purr.prototype.init = function() {
         }
     });
     
-    this.register_listener(/^::/, function(c) {
-        c.channel.send_reply(c.intent,
-                             "Paws code executed sucessfully. (no output)");
+    this.register_listener(/^::\s+(.*)/, function(c, _, code) { var world = new paws.World
+      , root = new paws.Execution(paws.parse(code))
+        
+        paws.aliens.print = new paws.Execution(function(caller) {
+            this.result(caller, new paws.Execution(function(label) { this.stage(caller, null)
+                c.channel.send_reply(c.intent, label.text) })) })
+        paws.aliens.inspect = new paws.Execution(function(caller) {
+            this.result(caller, new paws.Execution(function(thing) { this.stage(caller, null)
+                c.channel.send_reply(c.intent, paws.debug.ANSI.strip(thing.toString())) })) })
+        
+        root.locals.affix(new paws.Label('infrastructure'), world.infrastructure)
+        root.locals.affix(new paws.Label('#'), world.infrastructure)
+        
+        // Teaching stuff
+        root.locals.affix(new paws.Label('foo'), new paws.Label('bar'))
+        
+        world.stage(root)
+        
+        try { world.run() }
+        catch(e) { c.channel.send_reply(c.intent, "you're a fucking retard."); throw e }
     });
 
     // I am ashamed of this code. Please kill me. -devyn
