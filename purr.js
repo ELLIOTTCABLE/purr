@@ -259,8 +259,14 @@ Purr.prototype.init = function() {
         }
     });
 
+    this.lollable = true;
     this.register_listener(/\b(\w*lol\w*)\b/i, function(context, text, word) {
-        if (this.isDick(context)) context.channel.send(word);
+        if (this.lollable && this.isDick(context)) {
+           this.lollable = false;
+           var self = this;
+           setTimeout(function() { self.lollable = true; }, 3*60*1000);
+           context.channel.send("lol");
+        }
     });
 
     this.register_listener(/get along/, function(context) {
@@ -759,7 +765,8 @@ Purr.prototype.sol = function (context, text) {
 };
 
 Purr.prototype.isDick = function(context) {
-	if (typeof context === 'undefined' || context.priv || context.channel.name === '#elliottcable') {
+	if (typeof context === 'undefined' || context.priv
+         || context.channel.name === '#purr' || context.channel.name === '#elliottcable') {
 		var now = +new Date();
 		return (this.annoyban == undefined || this.annoyban < (now - 1000*60*60*24));
 	} else {
