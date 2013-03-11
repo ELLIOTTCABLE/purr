@@ -145,7 +145,7 @@ Purr.prototype.init = function() {
         context.channel.send_action("");
     });
 
-	this.register_listener(/^([a-z][a-z0-9_|-]{0,15}): +(?:["\u201C]([^"\u201D]+)["\u201D] )?[.\u2026 ]*wh?[au]t\.$/i,
+	this.register_listener(/^([a-z][a-z0-9_|-]{0,15}): +(?:["\u201C]([^"\u201D]+)["\u201D] )?[.\u2026 ]*wh?[au]tf?\.$/i,
 	function(context, text, subject, object) {
 		if (typeof object === 'undefined') {
 			object = this.last_message[subject + context.channel.name];
