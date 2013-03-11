@@ -269,12 +269,42 @@ Purr.prototype.init = function() {
         }
     });
 
+    this.register_listener(/[A-Z]\w+[A-Z]\w+ .*get along with.*/, function(context) {
+        if (this.isDick(context)) context.channel.send_action('shakes his head.')
+    });
     this.register_listener(/get along/, function(context) {
         if (this.isDick(context)) context.channel.send("hah");
     });
 
+    this.register_listener(/\*shrug\*|shrugs/, function(context) {
+        if (this.isDick(context)) context.channel.send("¯\\(º_o)/¯");
+    });
+
     this.register_listener(/^\s*purr: i (?:like|love) you/i, function(context) {
         if (this.isDick(context)) context.channel.send_reply(context.sender, "thank you! ^_^");
+    });
+    
+    this.comment = function(context){ var that = this
+        if (!this.isDick(context)) return false;
+        if (!that.commented) {
+            setTimeout(function(){ delete that.commented }, 3*60*1000)
+            that.commented = true }
+        
+        return that.commented }
+    this.register_listener(/\bpurr\b.*\b(she|her)\b|\b(she|her)\b.*\bpurr\b/i, function(context, text, phrase) { var that = this
+        if (this.comment(context)) { var responses = [], match
+          , re = /(?:[^ ]+ )?\b(?:she|her)\b(?: [^ ]+)?/gi
+            while ( (match = re.exec(text)) !== null ) {
+                console.log(match)
+                responses.push( match[0].replace(/she/i, '*he*').replace(/her/i, '*his*') ) }
+            console.log(responses)
+            context.channel.send_reply(context.sender, '... ' + responses.join(', ')) }
+    });
+    this.register_listener(/purr\b.*\bcatgirl/, function(context) { var that = this
+        if (this.isDick(context) && !this.insulted) {
+            this.commented = true
+            setTimeout(function() { this.insulted = false }, 86400 * 1000)
+            context.channel.send_reply(context.sender, "suck my cock. (relevant: because I have one)") }
     });
 
 	this.register_listener(/purr.*\b(?:hi|hello)\b|\b(?:hi|hello)\b.*purr|^\s*hi\s*$/i, function(context) {
@@ -782,6 +812,11 @@ Purr.prototype.love = function(context, lover, loved, d, opts) {
 
     if ((c == 0 || c == 1) && d == 1 && loved.match(new RegExp('^'+lover+'$', 'i'))) {
         if (this.isDick(context)) context.channel.send("Let it be known that " + lover + " is an egotistical prick.");
+	return;
+    }
+
+    if (d == -1 && loved.match(/^purr/i)) {
+        if (this.isDick(context)) context.channel.send(lover + "-- (... dickface.)");
 	return;
     }
 
