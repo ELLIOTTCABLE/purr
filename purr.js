@@ -291,20 +291,19 @@ Purr.prototype.init = function() {
             that.commented = true }
         
         return that.commented }
-    this.register_listener(/\bpurr\b.*\b(she|her)\b|\b(she|her)\b.*\bpurr\b/i, function(context, text, phrase) { var that = this
-        if (this.comment(context)) { var responses = [], match
-          , re = /(?:[^ ]+ )?\b(?:she|her)\b(?: [^ ]+)?/gi
-            while ( (match = re.exec(text)) !== null ) {
-                console.log(match)
-                responses.push( match[0].replace(/she/i, '*he*').replace(/her/i, '*his*') ) }
-            console.log(responses)
-            context.channel.send_reply(context.sender, '... ' + responses.join(', ')) }
-    });
     this.register_listener(/purr\b.*\bcatgirl/, function(context) { var that = this
         if (this.isDick(context) && !this.insulted) {
             this.commented = true
             setTimeout(function() { this.insulted = false }, 86400 * 1000)
             context.channel.send_reply(context.sender, "suck my cock. (relevant: because I have one)") }
+    });
+    this.register_listener(/\bpurr\b.*\b(she|her)\b|\b(she|her)\b.*\bpurr\b/i, function(context, text, phrase) { var that = this
+        text = text.replace(/^purr:/, '')
+        if (this.comment(context)) { var responses = [], match
+          , re = /(?:[^ ]+ )?\b(?:she|her)\b(?:[^ ]* [^ ]+)?/gi
+            while ( (match = re.exec(text)) !== null )
+                responses.push( match[0].replace(/she/i, '*he*').replace(/her/i, '*his*') )
+            context.channel.send_reply(context.sender, '... ' + responses.join(', ')) }
     });
 
 	this.register_listener(/purr.*\b(?:hi|hello)\b|\b(?:hi|hello)\b.*purr|^\s*hi\s*$/i, function(context) {
