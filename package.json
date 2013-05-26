@@ -1,0 +1,12 @@
+{     "author" : "elliottcable (http://ell.io/tt)"
+   
+,       "name" : "purr"
+,    "private" :  true
+,    "version" : "1.0.0"
+
+,       "main" : "purr.js"
+
+,          "engines" :{"node":"~0.10.7"}
+,     "dependencies" :{"request"                : "~2.21.0"
+                     , "twss"                   : "~0.1.6"                                        }}
+
