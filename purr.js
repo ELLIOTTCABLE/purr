@@ -686,28 +686,28 @@ Purr.prototype.init = function() {
 
     
     
-    var kicked = {};
-    
-    this.register_command ("kick", function(context, text) {
-	if (this.isDick(context)) {
-            var channel = context.channel, userlist, client = context.client;
-            
-            if (context.priv) {
-		return channel.send_reply (context.sender, "Must be in the channel to !kick.");
-            }
-            
-            userlist = channel.userlist;
-            if (text.toLowerCase () === "everyone") {
-		return channel.send_reply (context.sender, "Ha! Do I *look* like alexgordon?");
-            } else if (userlist.hasOwnProperty(text)) {
-		client.raw (
-                    "KICK "+context.channel.name+" "+text+
-			" :purr doesn't like you.");
-            } else {
-		return channel.send_reply (context.sender, "No one named `"+text+"` in the channel.");
-            }
-	}
-    });
+//    var kicked = {};
+//    
+//    this.register_command ("kick", function(context, text) {
+//	if (this.isDick(context)) {
+//            var channel = context.channel, userlist, client = context.client;
+//            
+//            if (context.priv) {
+//		return channel.send_reply (context.sender, "Must be in the channel to !kick.");
+//            }
+//            
+//            userlist = channel.userlist;
+//            if (text.toLowerCase () === "everyone") {
+//		return channel.send_reply (context.sender, "Ha! Do I *look* like alexgordon?");
+//            } else if (userlist.hasOwnProperty(text)) {
+//		client.raw (
+//                    "KICK "+context.channel.name+" "+text+
+//			" :purr doesn't like you.");
+//            } else {
+//		return channel.send_reply (context.sender, "No one named `"+text+"` in the channel.");
+//            }
+//	}
+//    });
     
     
     this.register_command("twister", function(context) {
