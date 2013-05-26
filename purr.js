@@ -5,6 +5,8 @@ var http          = require("http");
 var path          = require("path");
 var querystring   = require('querystring');
 
+var request       = require('request');
+
 var Bot           = require("./lib/irc");
 var Client        = require("./lib/irc/client");
 
@@ -140,6 +142,29 @@ Purr.prototype.init = function() {
     this.register_command("sol", this.sol);
     
     this.password = "white goo dreeping down my strema";
+
+    var tinysong = function(context, song_name, number){
+        var uri = "http://tinysong.com/s/"+song_name.split(' ').join('+');
+        console.log(uri);
+        request({ uri: uri, json: true, encoding: 'utf8'
+                , qs: {format: 'json', limit: number, key: '323d2374a9253c2bfc73fd0e6a461fb7'}
+        }, function(err, res, songs){
+            if (err || songs.error) {
+                console.log(err, songs.error);
+                context.channel.send_reply(context.sender, "HTTP request failed. ):") }
+            else {
+                var blue = "\0032", green = "\0033", yellow = "\0037", reset="\017";
+                var reply = songs.map(function(song){
+                    return green+'“'+song.SongName+'”'+reset+', '
+                          +yellow+song.ArtistName+reset+': '
+                          +blue+'<'+song.Url+'>'+reset }).join(', ')
+                console.log(util.inspect(reply))
+                context.channel.send_reply(context.sender, reply, {color: true})
+            }
+        });
+    }
+    this.register_command("song",        function(context,   text){ tinysong(context, text, 3) });
+    this.register_listener(/^♪\s+(.*)$/, function(context,_, text){ tinysong(context, text, 1) });
 
     this.register_command("purr", function(context) {
         context.channel.send_action("");
