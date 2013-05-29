@@ -152,13 +152,14 @@ Purr.prototype.init = function() {
             if (err || songs.error) {
                 console.log(err, songs.error);
                 context.channel.send_reply(context.sender, "HTTP request failed. ):") }
-            else {
+            else if (songs.length === 0)
+                context.channel.send_reply(context.sender, "Song not found. ):")
+            else   {
                 var blue = "\0032", green = "\0033", yellow = "\0037", reset="\017";
                 var reply = songs.map(function(song){
                     return green+'“'+song.SongName+'”'+reset+', '
                           +yellow+song.ArtistName+reset+': '
                           +blue+'<'+song.Url+'>'+reset }).join(', ')
-                console.log(util.inspect(reply))
                 context.channel.send_reply(context.sender, reply, {color: true})
             }
         });
