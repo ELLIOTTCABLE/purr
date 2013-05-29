@@ -598,7 +598,7 @@ Purr.prototype.init = function() {
             return "";
         });
 
-        for (; (Date.now() - startTime) <= 3000 && curChr < code.length; curChr++) {
+        for (; (Date.now() - startTime) <= 15000 && curChr < code.length; curChr++) {
             switch (code[curChr]) {
             case '>':
                 curCell++;
@@ -653,7 +653,7 @@ Purr.prototype.init = function() {
             }
         }
 
-        if ((Date.now() - startTime) > 3000) {
+        if ((Date.now() - startTime) > 15000) {
         context.channel.send_reply(context.sender, "Timeout exceeded.");
         return;
         }
