@@ -143,7 +143,7 @@ Purr.prototype.init = function() {
     
     this.password = "white goo dreeping down my strema";
 
-    var tinysong = function(context, song_name, number){
+    var tinysong = function(context, song_name, number, cb){
         var uri = "http://tinysong.com/s/"+song_name.split(' ').join('+');
         console.log(uri);
         request({ uri: uri, json: true, encoding: 'utf8'
@@ -154,18 +154,25 @@ Purr.prototype.init = function() {
                 context.channel.send_reply(context.sender, "HTTP request failed. ):") }
             else if (songs.length === 0)
                 context.channel.send_reply(context.sender, "Song not found. ):")
-            else   {
-                var blue = "\0032", green = "\0033", yellow = "\0037", reset="\017";
-                var reply = songs.map(function(song){
-                    return green+'“'+song.SongName+'”'+reset+', '
-                          +yellow+song.ArtistName+reset+': '
-                          +blue+'<'+song.Url+'>'+reset }).join(', ')
-                context.channel.send_reply(context.sender, reply, {color: true})
-            }
+            else { var
+                blue = "\0032", green = "\0033", yellow = "\0037", reset="\017"
+              , reply = songs.map(function(song){
+                    return { song: green+'“'+song.SongName+'”'+reset
+                           , artist: yellow+song.ArtistName+reset
+                           , URI: blue+'<'+song.Url+'>'+reset } });
+                cb(reply) }
         });
     }
-    this.register_command("song",        function(context,   text){ tinysong(context, text, 3) });
-    this.register_listener(/^♪\s+(.*)$/, function(context,_, text){ tinysong(context, text, 1) });
+    this.register_command("song", function(context, text){ var reply;
+        tinysong(context, text, 3, function(reply){
+            reply = reply.map(function(song){
+                return song.song+' by '+song.artist+': '+song.URI }).join(', ');
+            context.channel.send_reply(context.sender, reply, {color: true}) }) });
+    this.register_listener(/^♪\s+(.*)$/, function(context,_, text){ var reply;
+        tinysong(context, text, 1, function(reply){
+            message = context.sender.name+" is listening to "+reply[0].song+", by "+reply[0].artist;
+            context.channel.send(message, {color: true});
+            context.channel.send('('+reply[0].URI+')', {color: true}) }) });
 
     this.register_command("purr", function(context) {
         context.channel.send_action("");
