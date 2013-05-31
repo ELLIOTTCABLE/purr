@@ -821,21 +821,21 @@ Purr.prototype.sol = function (context, text) {
                 } else if (f.flags.h) {
                     var s = context.sender;
                     s.send("----------------------------[ !sol command usage ]-----------------------------");
-                    s.send("!sol");
+                    s.send("-sol");
                     s.send("  Outputs the current time in the Unix-Julian Date format.");
-                    s.send("!sol -g <time>");
+                    s.send("-sol -g <time>");
                     s.send("  Converts an ISO 8601 Gregorian time to UJD.");
-                    s.send("!sol -gr <amount>");
+                    s.send("-sol -gr <amount>");
                     s.send("  Converts a relative Gregorian amount (e.g. 8 months) to the equivalent");
                     s.send("  measurement in sols (ſ).");
-                    s.send("!sol -ga <amount>");
+                    s.send("-sol -ga <amount>");
                     s.send("  Outputs the current time in UJD, advanced by <amount> specified in Gregorian");
                     s.send("  measurements.");
-                    s.send("!sol -s <time>");
+                    s.send("-sol -s <time>");
                     s.send("  Converts a Unix-Julian Date to the conventional Gregorian format.");
-                    s.send("!sol -sr <amount>");
+                    s.send("-sol -sr <amount>");
                     s.send("  Converts an amount measured in sols (ſ) to a Gregorian-based amount.");
-                    s.send("!sol -sa <amount>");
+                    s.send("-sol -sa <amount>");
                     s.send("  Outputs the current UTC time in Gregorian, advanced by <amount> sols (ſ).");
                     s.send("-------------------------------------------------------------------------------");
                     return;
@@ -847,7 +847,7 @@ Purr.prototype.sol = function (context, text) {
         return context.channel.send_reply(context.intent, new Sol().toString());
     }
     context.channel.send_reply(context.sender,
-                               "Invalid usage. If you invoke `!sol -h`, I'll PM you with instructions on how to use !sol.");
+                               "Invalid usage. If you invoke `-sol -h`, I'll PM you with instructions on how to use -sol.");
 };
 
 Purr.prototype.isDick = function(context) {
