@@ -6,6 +6,7 @@ var path          = require("path");
 var querystring   = require('querystring');
 
 var request       = require('request');
+var cheerio       = require('cheerio');
 
 var Bot           = require("./lib/irc");
 var Client        = require("./lib/irc/client");
@@ -173,6 +174,29 @@ Purr.prototype.init = function() {
             message = context.sender.name+" is listening to "+reply[0].song+", by "+reply[0].artist;
             context.channel.send(message, {color: true});
             context.channel.send('('+reply[0].URI+')', {color: true}) }) });
+    
+    var rule34 = function(context, key_words, cb){ var
+        key_words = key_words.map(function(word){ return word.split(/\s+/).join('_') }).join('+')
+      , URI = "http://rule34.paheal.net/post/list?search=" + key_words
+      , pink = "\00313", reset="\017"
+        request(URI, function(err, resp, body){
+            if (err) return console.log(err);
+            $ = cheerio.load(body);
+            link = $("#image-list .shm-image-list .thumb a:contains('Image Only')").first();
+            if (link.length < 1) return console.log("No results for "+key_words);
+            request.get({ uri: "https://api-ssl.bitly.com/v3/shorten"
+             , qs: { longUrl: $(link).attr('href'), access_token: BITLY_TOKEN  }, json: true
+            }, function(err, resp, body){
+                if (err) return console.log(err);
+                cb(pink+'<'+body.data.url+'>'+reset);
+            });
+        });
+    };
+    this.register_command('34', function(context, text){ var reply;
+        if (!this.isDick(context)) return;
+        rule34(context, text.split(/\s*,\s*/), function(link){
+            reply = "Here. "+link+" ... I hope you know what you're getting yourself into";
+            context.channel.send_reply(context.sender, reply, {color: true}) }) });
 
     this.register_command("purr", function(context) {
         context.channel.send_action("");
