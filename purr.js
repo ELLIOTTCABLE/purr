@@ -162,11 +162,13 @@ Purr.prototype.init = function() {
         });
     }
     this.register_command("song", function(context, text){ var reply;
+        if (!this.isDick(context)) return;
         tinysong(context, text, 3, function(reply){
             reply = reply.map(function(song){
                 return song.song+' by '+song.artist+': '+song.URI }).join(', ');
             context.channel.send_reply(context.intent, reply, {color: true}) }) });
     this.register_listener(/^♪\s+(.*)$/, function(context,_, text){ var reply;
+        if (!this.isDick(context)) return;
         tinysong(context, text, 1, function(reply){
             message = context.sender.name+" is listening to "+reply[0].song+", by "+reply[0].artist;
             context.channel.send(message, {color: true});
