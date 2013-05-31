@@ -192,11 +192,12 @@ Purr.prototype.init = function() {
             });
         });
     };
-    this.register_command('34', function(context, text){ var reply;
-        if (!this.isDick(context)) return;
+    this.register_command('34', function(context, text){ if (!this.isDick(context)) return;
         rule34(context, text.split(/\s*,\s*/), function(link){
-            context.channel.send_reply(context.sender, "Here. "+link, {color: true});
-            context.channel.send_reply(context.sender, "... if you had any sense, you wouldn't have asked.") }) });
+            context.channel.send_reply(context.intent, "Here. "+link, {color: true});
+            context.channel.send_reply(context.sender, context.sender.name === context.intent.name
+                ? "... if you had any sense, you wouldn't have asked."
+                : "(You're a dick.)" ) }) });
 
     this.register_command("purr", function(context) {
         context.channel.send_action("");
