@@ -1,2 +1,3 @@
 tmux-*
+node_modules/*
 purr-profile.js
