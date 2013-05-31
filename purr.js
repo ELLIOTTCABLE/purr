@@ -59,6 +59,7 @@ var Purr = function(profile) {
 	this.what     = new JSONSaver     (path.join(__dirname, 'data', "purr-what.json"));
 
 	this.code_sessions = {};
+	this.code_session_timeout = 120;
 	this.last_message  = {};
 
     this.set_log_level(this.LOG_ALL);
@@ -88,31 +89,20 @@ Purr.prototype.init = function() {
 		});
 	});
 
-    this.register_listener(/^((?:sm?|v8?|js?|>>?)>)([^>].*)+/,
-	function(context, text, command, code) {
-		var session = this.code_sessions[context.sender.name];
-		if (typeof session === 'undefined') {
-			this.eval_priv(context, command, code);
-		} else {
-			clearTimeout(session.timeout);
-		        this.eval_priv(context, command, session.code + code);
-			delete this.code_sessions[context.sender.name];
-		}
-	});
-
-    this.register_listener(/^\|\| (.*)/, function(context, text, code) {
-		var code_sessions = this.code_sessions, name = context.sender.name, self = this;
-		var session = code_sessions[name];
-		var timeout = setTimeout(function() { delete code_sessions[name] }, 30000);
-		if (typeof session === 'undefined') {
-			session = code_sessions[name] = {timeout: timeout, code: ""};
-		} else {
-			clearTimeout(session.timeout);
-			session.timeout = timeout;
-		}
-		session.code += code + "\n";
-    });
-
+    this.register_listener(/^\|\| (.*)/, function(ctx, _, code){ var
+        sess = this.code_session(ctx.sender.name)
+        sess.code += code + "\n";
+    }, {allow_intentions: false});
+    this.register_listener(/^((?:sm?|v8?|js?|>>?)>)([^>].*)+/, function(ctx, _, mode, code){ var
+        sess = this.code_session(ctx.sender.name);
+        this.eval_priv(ctx, mode, sess.code+code+"\n");
+        sess.code = "";
+    }, {allow_intentions: false});
+    this.register_command("uncode", function(ctx) {
+        this.clear_code_session(ctx.sender.name);
+        ctx.channel.send_reply(ctx.sender, "JS / Paws code sessions cleared for your nickname.");
+    }, {allow_intentions: false});
+    
     this.register_command("topic", Shared.topic);
     this.register_command("find", Shared.find.bind(this));
     this.register_command("learn", function (context) {
@@ -920,6 +910,28 @@ Purr.prototype.eval_priv = function(context, command, code) {
 	}
     } else {
 	Shared.execute_js.call(this, context, "", command, code);
+    }
+};
+
+
+Purr.prototype.code_session = function (name) { var sess
+  , sessions = this.code_sessions
+  , timeout = setTimeout(function(){ delete sessions[name] }, this.code_session_timeout *1000);
+    if ((sess = sessions[name]) == null)
+        return  sessions[name] = { timeout: timeout, code: "" };
+    clearTimeout(sess.timeout);
+    sess.timeout = timeout;
+    return sess;
+};
+
+Purr.prototype.clear_code_session = function (name) { var
+    sessions = this.code_sessions
+  , sess = sessions[name];
+    if (sess != null) {
+        delete sessions[name];
+        clearTimeout(sess.timeout);
+        if (sess.world) sess.world.stop(); // TODO: This needs a proper timeout/kill.
+        return sess;
     }
 };
 
