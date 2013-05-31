@@ -847,7 +847,8 @@ Purr.prototype.sol = function (context, text) {
 
 Purr.prototype.isDick = function(context) {
 	if (typeof context === 'undefined' || context.priv
-         || context.channel.name === '#purr' || context.channel.name === '#elliottcable') {
+         || context.channel.name === '#purr' || context.channel.name === '#elliottcable'
+         || context.channel.name === '#chats' ) {
 		var now = +new Date();
 		return (this.annoyban == undefined || this.annoyban < (now - 1000*60*60*24));
 	} else {
