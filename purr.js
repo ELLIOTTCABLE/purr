@@ -188,15 +188,15 @@ Purr.prototype.init = function() {
              , qs: { longUrl: $(link).attr('href'), access_token: BITLY_TOKEN  }, json: true
             }, function(err, resp, body){
                 if (err) return console.log(err);
-                cb(pink+'<'+body.data.url+'>'+reset);
+                cb(pink+'<'+body.data.url+'> [NSFW]'+reset);
             });
         });
     };
     this.register_command('34', function(context, text){ var reply;
         if (!this.isDick(context)) return;
         rule34(context, text.split(/\s*,\s*/), function(link){
-            reply = "Here. "+link+" ... I hope you know what you're getting yourself into";
-            context.channel.send_reply(context.sender, reply, {color: true}) }) });
+            context.channel.send_reply(context.sender, "Here. "+link, {color: true});
+            context.channel.send_reply(context.sender, "... if you had any sense, you wouldn't have asked.") }) });
 
     this.register_command("purr", function(context) {
         context.channel.send_action("");
