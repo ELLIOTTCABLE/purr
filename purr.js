@@ -17,7 +17,7 @@ var FactoidServer = require("./lib/factoidserv");
 var JSONSaver     = require("./lib/jsonsaver");
 var FeelingLucky  = require("./lib/feelinglucky");
 
-var paws  = require("./lib/nanopaws");
+var paws  = require("./lib/µpaws.js/µPaws.js");
 
 var Shared = require("./shared");
 
@@ -582,27 +582,21 @@ Purr.prototype.init = function() {
         }
     });
     
-    this.register_listener(/^::\s+(.*)/, function(c, _, code) { var world = new paws.World
-      , root = new paws.Execution(paws.parse(code))
-        
-        paws.aliens.print = new paws.Execution(function(caller) {
-            this.result(caller, new paws.Execution(function(label) { this.stage(caller, null)
-                c.channel.send_reply(c.intent, label.text) })) })
-        paws.aliens.inspect = new paws.Execution(function(caller) {
-            this.result(caller, new paws.Execution(function(thing) { this.stage(caller, null)
-                c.channel.send_reply(c.intent, paws.debug.ANSI.strip(thing.toString())) })) })
-        
-        root.locals.affix(new paws.Label('infrastructure'), world.infrastructure)
-        root.locals.affix(new paws.Label('#'), world.infrastructure)
-        
-        // Teaching stuff
-        root.locals.affix(new paws.Label('foo'), new paws.Label('bar'))
-        
-        world.stage(root)
-        
-        try { world.run() }
-        catch(e) { c.channel.send_reply(c.intent, "you're a fucking retard."); throw e }
-    });
+    this.register_listener(/^::([^>].*)+/,
+	function(context, text, code) {
+		var session = this.code_sessions[context.sender.name];
+		if (typeof session === 'undefined') {
+			this.eval_paws(context, code, function(evaled){
+                            // TODO
+                        });
+		} else {
+			clearTimeout(session.timeout);
+		        this.eval_paws(context, session.code + code, function(evaled){
+                            // TODO
+                        });
+			delete this.code_sessions[context.sender.name];
+		}
+	});
 
     // I am ashamed of this code. Please kill me. -devyn
 
@@ -934,6 +928,62 @@ Purr.prototype.clear_code_session = function (name) { var
         return sess;
     }
 };
+
+// TODO: This should be DRY'd up by generalizing paws.REPL
+// TODO: Currently assumes single-line, multi-expression. Support multi-line with `void`.
+Purr.prototype.eval_paws = function(ctx, code, cb) { var obj
+  , sess = this.code_session(ctx.sender.name);
+    
+    if (code.length > 0) {
+        if (sess.world == null) {
+            sess.world = new paws.World;
+            sess.world.start();
+            
+            sess.globals = paws.Execution(new Function);
+            obj = { implementation: {
+                stop: paws.implementation.stop
+              , util: {
+                    test:   paws.Execution(function(){ ctx.channel.send_reply(ctx.sender, 'test successful!') })
+                  , print:  paws.Execution(function(label){ ctx.channel.send_reply(ctx.sender, label.string) })
+                  , inspect: paws.Execution(function(thing){ ctx.channel.send(thing.inspect() ,{color:true}) })
+                }
+              , void: paws.implementation.void
+            } };
+            obj.impl = obj.implementation;
+            obj.infra = paws.infrastructure;
+            sess.world.applyGlobals(sess.globals, obj);
+            sess.globals = sess.globals.locals;
+        }
+        
+        var expr = new paws.Expression(paws.implementation.void)
+          , lines = code.split("\n").forEach(function(line){
+                expr.append( new paws.Expression(paws.cPaws.parse(line)) ) })
+          , exe = new paws.Execution(expr).name('<IRC eval>')
+            exe.locals = sess.globals
+        
+        sess.world.stage(exe);
+    }
+};
+
+// FIXME: Extremely fragile monkey-patching of µpaws.js to allow all that complex debugging code to
+//        spit out colored text in IRC. >,>
+ANSI = paws.debug.ANSI;
+ANSI.length = 0;
+ANSI.reset = "\017";    ANSI.bold = "\002";     ANSI.underline = "\037";ANSI.negative = "\022"
+ANSI[00] = 'brwhite';   ANSI[01] = 'black';     ANSI[02] = 'blue';      ANSI[03] = 'green'
+ANSI[04] = 'brred';     ANSI[05] = 'red';       ANSI[06] = 'magenta';   ANSI[07] = 'yellow'
+ANSI[08] = 'bryellow';  ANSI[09] = 'brgreen';   ANSI[10] = 'cyan';      ANSI[11] = 'brcyan'
+ANSI[12] = 'brblue';    ANSI[13] = 'brmagenta'; ANSI[14]= 'brblack';    ANSI[15] = 'white'
+                                                     // FIXME: v- Doesn't handle nesting
+ANSI.wrap = function wrap_codes(start, end) { if (end == null) end = ANSI.reset
+    return function wrap_text(text){
+        return start+text+end } }
+ANSI.regex = /\x1B\[([0-9]+(;[0-9]+)*)?m/g
+ANSI.strip = function strip(text){ return text.replace(ANSI.regex,'') }
+ANSI.forEach(function(name, code){ ANSI[name] = ANSI.wrap("\003"+code) });
+ANSI.bold       = ANSI.wrap(ANSI.bold);
+ANSI.underline  = ANSI.wrap(ANSI.underline);
+ANSI.negative   = ANSI.wrap(ANSI.negative);
 
 
 var profile = require("./purr-profile.js");
