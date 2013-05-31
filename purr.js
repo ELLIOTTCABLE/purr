@@ -170,6 +170,9 @@ Purr.prototype.init = function() {
     this.register_listener(/^♪\s+(.*)$/, function(context,_, text){ var reply;
         if (!this.isDick(context)) return;
         tinysong(context, text, 1, function(reply){
+            if (/justin timberlake/i.test(reply[0].artist)) {
+                return context.client.raw(
+                    "KICK "+context.channel.name+" "+context.sender.name+" : NO JUSTIN TIMBERLAKE.") }
             message = context.sender.name+" is listening to "+reply[0].song+", by "+reply[0].artist;
             context.channel.send(message, {color: true});
             context.channel.send('('+reply[0].URI+')', {color: true}) }) });
