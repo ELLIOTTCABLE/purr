@@ -103,10 +103,7 @@ Purr.prototype.init = function() {
     this.register_listener(/^\|\| (.*)/, function(context, text, code) {
 		var code_sessions = this.code_sessions, name = context.sender.name, self = this;
 		var session = code_sessions[name];
-		var timeout = setTimeout(function() {
-                        self.eval_priv(context, '>>', session.code);
-                        delete code_sessions[name];
-                    }, 7000);
+		var timeout = setTimeout(function() { delete code_sessions[name] }, 30000);
 		if (typeof session === 'undefined') {
 			session = code_sessions[name] = {timeout: timeout, code: ""};
 		} else {
