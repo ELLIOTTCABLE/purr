@@ -168,7 +168,7 @@ Purr.prototype.init = function() {
         tinysong(context, text, 3, function(reply){
             reply = reply.map(function(song){
                 return song.song+' by '+song.artist+': '+song.URI }).join(', ');
-            context.channel.send_reply(context.sender, reply, {color: true}) }) });
+            context.channel.send_reply(context.intent, reply, {color: true}) }) });
     this.register_listener(/^♪\s+(.*)$/, function(context,_, text){ var reply;
         tinysong(context, text, 1, function(reply){
             message = context.sender.name+" is listening to "+reply[0].song+", by "+reply[0].artist;
@@ -280,7 +280,7 @@ Purr.prototype.init = function() {
 					var relsol = new Sol().relativize(Sol.parseSol(info.timestamp, true));
 					delta_time = new Sol(((relsol.floating * 1000) | 0) / 1000, false).toString();
 				}
-				context.channel.send_reply (context.sender, "Popularity: " + info.popularity +
+				context.channel.send_reply (context.intent, "Popularity: " + info.popularity +
 											", last changed by: " + (info.modified_by || "<unknown>") +
 											", " + delta_time + " ago");
 			}
