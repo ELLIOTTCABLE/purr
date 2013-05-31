@@ -317,13 +317,20 @@ Purr.prototype.init = function() {
     });
 
     this.lollable = true;
+    this.drinkable = false;
     this.register_listener(/\b(\w*lol\w*)\b/i, function(context, text, word) {
         if (this.lollable && this.isDick(context)) {
            this.lollable = false;
            var self = this;
            setTimeout(function() { self.lollable = true; }, 3*60*1000);
-           context.channel.send("lol");
+           context.channel.send(this.drinkable? "DRINK!" : "lol");
         }
+    });
+    
+    this.register_command("play", function(context) {
+        this.drinkable = true;
+        context.channel.send("Let's play a game. It works like this:");
+        context.channel.send_reply(context.intent, "DRINK!");
     });
 
     this.register_listener(/[A-Z]\w+[A-Z]\w+ .*get along with.*/, function(context) {
@@ -369,6 +376,7 @@ Purr.prototype.init = function() {
 
     this.register_command("stop", function(context) {
         var now = +new Date();
+        this.drinkable = false;
         if (this.isDick(context)) {
             this.annoyban = +new Date();
 			clearInterval (this.countdown_timer);
