@@ -316,7 +316,7 @@ Purr.prototype.init = function() {
            this.lollable = false;
            var self = this;
            setTimeout(function() { self.lollable = true; }, 3*60*1000);
-           context.channel.send(this.drinkable? "DRINK!" : "lol");
+           context.channel.send(this.drinkable? word+" (DRINK!)" : word);
         }
     });
     
