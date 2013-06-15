@@ -400,11 +400,17 @@ Purr.prototype.init = function() {
         }
     });
 
-    this.register_listener(/^\+\+ +(.+)$/, function(context, text, loved) {
+    this.register_listener(/^\+\+\s*(.+)$/, function(context, text, loved) {
+        this.love(context, context.sender.name, loved.trim(), +1);
+    }, {allow_intentions: false});
+    this.register_listener(/^([^\s]+)\s*\+\+$/, function(context, text, loved) {
         this.love(context, context.sender.name, loved.trim(), +1);
     }, {allow_intentions: false});
 
-    this.register_listener(/^-- +(.+)$/, function(context, text, loved) {
+    this.register_listener(/^--\s*(.+)$/, function(context, text, loved) {
+        this.love(context, context.sender.name, loved.trim(), -1);
+    }, {allow_intentions: false});
+    this.register_listener(/^([^\s]+)\s*--$/, function(context, text, loved) {
         this.love(context, context.sender.name, loved.trim(), -1);
     }, {allow_intentions: false});
 
