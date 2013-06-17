@@ -17,7 +17,7 @@ var FactoidServer = require("./lib/factoidserv");
 var JSONSaver     = require("./lib/jsonsaver");
 var FeelingLucky  = require("./lib/feelinglucky");
 
-var paws  = require("./lib/µpaws.js/µPaws.js");
+var paws  = require("./lib/µpaws.js/µpaws.js");
 
 var Shared = require("./shared");
 
