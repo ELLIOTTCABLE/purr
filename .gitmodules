@@ -3,4 +3,4 @@
 	url = ./data/.git
 [submodule "lib/µpaws.js"]
 	path = lib/µpaws.js
-	url = git://github.com/ELLIOTTCABLE/muPaws.js.git
+	url = git://github.com/ELLIOTTCABLE/upaws.js.git
