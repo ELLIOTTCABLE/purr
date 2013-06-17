@@ -43,9 +43,9 @@ function merge(defaults, options) {
     if (typeof options === "undefined") return defaults;
     var o = {};
     for (var i in defaults) {
-	if (defaults.hasOwnProperty(i)) {
-	    o[i] = typeof options[i] === "undefined" ? defaults[i] : options[i];
-	}
+    if (defaults.hasOwnProperty(i)) {
+        o[i] = typeof options[i] === "undefined" ? defaults[i] : options[i];
+    }
     }
     return o;
 }
@@ -56,11 +56,11 @@ var Purr = function(profile) {
     this.sandbox  = new Sandbox       (path.join(__dirname, "purr-utils.js"));
     this.factoids = new FactoidServer (path.join(__dirname, 'data', "purr-factoids.json"));
     this.loves    = new JSONSaver     (path.join(__dirname, 'data', "purr-loves.json"));
-	this.what     = new JSONSaver     (path.join(__dirname, 'data', "purr-what.json"));
+    this.what     = new JSONSaver     (path.join(__dirname, 'data', "purr-what.json"));
 
-	this.code_sessions = {};
-	this.code_session_timeout = 120;
-	this.last_message  = {};
+    this.code_sessions = {};
+    this.code_session_timeout = 120;
+    this.last_message  = {};
 
     this.set_log_level(this.LOG_ALL);
     this.set_trigger("-");
@@ -69,25 +69,25 @@ var Purr = function(profile) {
 util.inherits(Purr, Bot);
 
 Purr.prototype.init = function() {
-	Bot.prototype.init.call(this);
+    Bot.prototype.init.call(this);
 
-	var bot = this;
+    var bot = this;
 
-	this.on('connect', function(client) {
-		client.on('message', function(channel, user, text) {
-			bot.last_message[user.name + channel.name] = text;
-		});
-		
-		client.on('join', function(channel) {
-			channel.on('send', function(data) {
-				util.log(util.inspect(data));
-				var m = data.match(/^PRIVMSG (#[^ :]+) :(.*)/);
-				if (m) {
-					bot.last_message['purr' + m[1]] = m[2];
-				}
-			});
-		});
-	});
+    this.on('connect', function(client) {
+        client.on('message', function(channel, user, text) {
+            bot.last_message[user.name + channel.name] = text;
+        });
+        
+        client.on('join', function(channel) {
+            channel.on('send', function(data) {
+                util.log(util.inspect(data));
+                var m = data.match(/^PRIVMSG (#[^ :]+) :(.*)/);
+                if (m) {
+                    bot.last_message['purr' + m[1]] = m[2];
+                }
+            });
+        });
+    });
 
     this.register_listener(/^\|\| (.*)/, function(ctx, _, code){ var
         sess = this.code_session(ctx.sender.name)
@@ -106,22 +106,22 @@ Purr.prototype.init = function() {
     this.register_command("topic", Shared.topic);
     this.register_command("find", Shared.find.bind(this));
     this.register_command("learn", function (context) {
-       if (context.sender.name === "gqbrielle" || context.sender.name === "mix") {
-          var today = new Date().getTime()/86400|0;
+        if (context.sender.name === "gqbrielle" || context.sender.name === "mix") {
+            var today = new Date().getTime()/86400|0;
 
-          if (this.gqLearnDay !== today) {
-             this.gqLearn = 0;
-             this.gqLearnDay = today;
-          }
+            if (this.gqLearnDay !== today) {
+                this.gqLearn = 0;
+                this.gqLearnDay = today;
+            }
 
-          if (this.gqLearn++ > 10) {
-             context.channel.send_reply(context.sender, "I think you've had enough for one day.");
-          } else {
+            if (this.gqLearn++ > 10) {
+                context.channel.send_reply(context.sender, "I think you've had enough for one day.");
+            } else {
+                Shared.learn.apply(this, arguments);
+            }
+        } else {
             Shared.learn.apply(this, arguments);
-          }
-       } else {
-         Shared.learn.apply(this, arguments);
-       }
+        }
     }, {allow_intentions: false});
     this.register_command("forget", Shared.forget, {allow_intentions: false});
     this.register_command("commands", Shared.commands);
@@ -195,43 +195,43 @@ Purr.prototype.init = function() {
         context.channel.send_action("");
     });
 
-	this.register_listener(/^([a-z][a-z0-9_|-]{0,15}): +(?:["\u201C]([^"\u201D]+)["\u201D] )?[.\u2026 ]*wh?[au]tf?\.$/i,
-	function(context, text, subject, object) {
-		if (typeof object === 'undefined') {
-			object = this.last_message[subject + context.channel.name];
-			if (typeof object === 'undefined') {
-				return context.channel.send_reply(context.sender, "can't find the referenced what.");
-			}
-		}
+    this.register_listener(/^([a-z][a-z0-9_|-]{0,15}): +(?:["\u201C]([^"\u201D]+)["\u201D] )?[.\u2026 ]*wh?[au]tf?\.$/i,
+    function(context, text, subject, object) {
+        if (typeof object === 'undefined') {
+            object = this.last_message[subject + context.channel.name];
+            if (typeof object === 'undefined') {
+                return context.channel.send_reply(context.sender, "can't find the referenced what.");
+            }
+        }
 
-		var m = object.match(/^\x01ACTION ([^\x01]*)\x01$/);
+        var m = object.match(/^\x01ACTION ([^\x01]*)\x01$/);
 
-		if (m) {
-			this.what.object.push("* " + subject + " " + m[1]);
-		} else {
-			this.what.object.push("<" + subject + "> " + object);
-		}
-		this.what.activity();
-               if (this.isDick(context)) context.channel.send('beep.')
-	});
+        if (m) {
+            this.what.object.push("* " + subject + " " + m[1]);
+        } else {
+            this.what.object.push("<" + subject + "> " + object);
+        }
+        this.what.activity();
+        if (this.isDick(context)) context.channel.send('beep.')
+    });
 
-	this.register_listener(/^\+what < *([^> ]+) *> +(.*)$/i,
-	function(context, text, subject, object) {
+    this.register_listener(/^\+what < *([^> ]+) *> +(.*)$/i,
+    function(context, text, subject, object) {
         this.what.object.push("<" + subject + "> " + object);
-		this.what.activity();
-       context.channel.send('beep.')
-	});
+        this.what.activity();
+        context.channel.send('beep.')
+    });
 
-	this.what.random = function(context) {
+    this.what.random = function(context) {
                 if (!this.isDick(context)) return;
-		var a = this.what.object;
-		if (a.length > 0) {
-			context.channel.send(a[Math.random()*a.length | 0]);
-		} else {
-			context.channel.send_reply(context.sender, "no data");
-		}
-	}
-	this.register_command("what", this.what.random);
+        var a = this.what.object;
+        if (a.length > 0) {
+            context.channel.send(a[Math.random()*a.length | 0]);
+        } else {
+            context.channel.send_reply(context.sender, "no data");
+        }
+    }
+    this.register_command("what", this.what.random);
     
     this.register_listener(/^\x01ACTION [^\x01]*purr[^\x01]*\x01$/, function(context) {
         if (this.isDick(context))
@@ -259,26 +259,26 @@ Purr.prototype.init = function() {
         context.channel.send (text.replace(/\s+/g, '') + " IS BEST"+word);
     });
 
-	this.register_command("factoid", function(context, text) {
-		var factoids = this.factoids.db.object.factoids, name = text.trim();
-		var info = factoids[name];
-		if (typeof info === 'undefined') {
-			context.channel.send_reply (context.sender, "Error: Factoid not found.")
-		} else {
-			if (typeof info.alias !== 'undefined') {
-				context.channel.send_reply (context.sender, "Alias: " + info.alias);
-			} else {
-				var delta_time = "<unknown time>";
-				if (typeof info.timestamp !== 'undefined') {
-					var relsol = new Sol().relativize(Sol.parseSol(info.timestamp, true));
-					delta_time = new Sol(((relsol.floating * 1000) | 0) / 1000, false).toString();
-				}
-				context.channel.send_reply (context.intent, "Popularity: " + info.popularity +
-											", last changed by: " + (info.modified_by || "<unknown>") +
-											", " + delta_time + " ago");
-			}
-		}
-	});
+    this.register_command("factoid", function(context, text) {
+        var factoids = this.factoids.db.object.factoids, name = text.trim();
+        var info = factoids[name];
+        if (typeof info === 'undefined') {
+            context.channel.send_reply (context.sender, "Error: Factoid not found.")
+        } else {
+            if (typeof info.alias !== 'undefined') {
+                context.channel.send_reply (context.sender, "Alias: " + info.alias);
+            } else {
+                var delta_time = "<unknown time>";
+                if (typeof info.timestamp !== 'undefined') {
+                    var relsol = new Sol().relativize(Sol.parseSol(info.timestamp, true));
+                    delta_time = new Sol(((relsol.floating * 1000) | 0) / 1000, false).toString();
+                }
+                context.channel.send_reply (context.intent, "Popularity: " + info.popularity +
+                                            ", last changed by: " + (info.modified_by || "<unknown>") +
+                                            ", " + delta_time + " ago");
+            }
+        }
+    });
     
     this.register_listener(/^\x0F\x0F(.+)/, function(context, text, code) {
         var result;
@@ -313,10 +313,10 @@ Purr.prototype.init = function() {
     this.drinkable = false;
     this.register_listener(/\b(\w*lol\w*)\b/i, function(context, text, word) {
         if (this.lollable && this.isDick(context)) {
-           this.lollable = false;
-           var self = this;
-           setTimeout(function() { self.lollable = true; }, 3*60*1000);
-           context.channel.send(this.drinkable? word+" (DRINK!)" : word);
+            this.lollable = false;
+            var self = this;
+            setTimeout(function() { self.lollable = true; }, 3*60*1000);
+            context.channel.send(this.drinkable? word+" (DRINK!)" : word);
         }
     });
     
@@ -363,16 +363,16 @@ Purr.prototype.init = function() {
             context.channel.send_reply(context.sender, '... ' + responses.join(', ')) }
     });
 
-	this.register_listener(/purr.*\b(?:hi|hello)\b|\b(?:hi|hello)\b.*purr|^\s*hi\s*$/i, function(context) {
-		if (this.isDick(context)) context.channel.send_reply(context.sender, "hi!");
-	});
+    this.register_listener(/purr.*\b(?:hi|hello)\b|\b(?:hi|hello)\b.*purr|^\s*hi\s*$/i, function(context) {
+        if (this.isDick(context)) context.channel.send_reply(context.sender, "hi!");
+    });
 
     this.register_command("stop", function(context) {
         var now = +new Date();
         this.drinkable = false;
         if (this.isDick(context)) {
             this.annoyban = +new Date();
-			clearInterval (this.countdown_timer);
+            clearInterval (this.countdown_timer);
         }
     });
 
@@ -420,11 +420,11 @@ Purr.prototype.init = function() {
     }, {allow_intentions: false});
 
     this.register_listener(/^(?:\x01ACTION )?(?:<3|\u2665) +(.+)(?:\x01)?$/, function(context, text, loved) {
-	this.love(context, context.sender.name, loved.trim(), +1, {love:" hearts ",hard:true});
+    this.love(context, context.sender.name, loved.trim(), +1, {love:" hearts ",hard:true});
     }, {allow_intentions: false});
 
     this.register_listener(/^\u0ca0_\u0ca0 +(.+)$/, function(context, text, loved) {
-	this.love(context, context.sender.name, loved.trim(), -1, {hate:" disapproves of ",hard:true});
+    this.love(context, context.sender.name, loved.trim(), -1, {hate:" disapproves of ",hard:true});
     }, {allow_intentions: false});
 
     this.register_command("loves", function(context, text) {
@@ -470,18 +470,18 @@ Purr.prototype.init = function() {
     });
 
     this.register_command("wholoves", function(context, text) {
-	var l = this.loves.object;
-	var a = [];
-	var t = text.trim().toLowerCase();
+    var l = this.loves.object;
+    var a = [];
+    var t = text.trim().toLowerCase();
 
-	for (var n in l) {
-	    if (l.hasOwnProperty(n)) {
-		for (var k in l[n]) {
-		    if (l[n].hasOwnProperty(k) && l[n][k] == +1 && k.toLowerCase() == t)
-			a.push(n);
-		}
-	    }
-	}
+    for (var n in l) {
+        if (l.hasOwnProperty(n)) {
+        for (var k in l[n]) {
+            if (l[n].hasOwnProperty(k) && l[n][k] == +1 && k.toLowerCase() == t)
+            a.push(n);
+        }
+        }
+    }
 
         if (a.length == 0) {
             context.channel.send_reply(context.intent, text.trim() + " is loved by no one :(");
@@ -494,18 +494,18 @@ Purr.prototype.init = function() {
     });
 
     this.register_command("whohates", function(context, text) {
-	var l = this.loves.object;
-	var a = [];
-	var t = text.trim().toLowerCase();
+    var l = this.loves.object;
+    var a = [];
+    var t = text.trim().toLowerCase();
 
-	for (var n in l) {
-	    if (l.hasOwnProperty(n)) {
-		for (var k in l[n]) {
-		    if (l[n].hasOwnProperty(k) && l[n][k] == -1 && k.toLowerCase() == t)
-			a.push(n);
-		}
-	    }
-	}
+    for (var n in l) {
+        if (l.hasOwnProperty(n)) {
+        for (var k in l[n]) {
+            if (l[n].hasOwnProperty(k) && l[n][k] == -1 && k.toLowerCase() == t)
+            a.push(n);
+        }
+        }
+    }
 
         if (a.length == 0) {
             context.channel.send_reply(context.intent, text.trim() + " is hated by no one :)");
@@ -524,28 +524,28 @@ Purr.prototype.init = function() {
             var length, decrement, self = this;
             
             if (text === "stop") {
-		return clearInterval(this.countdown_timer);
+        return clearInterval(this.countdown_timer);
             }
             
             length = parseFloat(text, 10);
             if (isNaN(length)) { length = text.length; }
-	    if (length > 30)   { length = 30;          }
-	    if (length < -30)  { length = -30;         }
+        if (length > 30)   { length = 30;          }
+        if (length < -30)  { length = -30;         }
             
             decrement = length / Math.abs(Math.round(length));
             if (!isFinite(decrement)) decrement = length;
             
             clearInterval (this.countdown_timer);
             this.countdown_timer = setInterval(function() {
-		if (length > 0.1 || length < -0.1) {
+        if (length > 0.1 || length < -0.1) {
                     context.channel.send(String((length*1000|0)/1000)+"...");
-		} else {
+        } else {
                     context.channel.send("Go!");
                     clearInterval(self.countdown_timer);
-		}
-		length -= decrement;
+        }
+        length -= decrement;
             }, 1000);
-	}
+    }
     });
     
     this.on('invite', function(user, channel) {
@@ -589,20 +589,20 @@ Purr.prototype.init = function() {
     });
     
     this.register_listener(/^::([^>].*)+/,
-	function(context, text, code) {
-		var session = this.code_sessions[context.sender.name];
-		if (typeof session === 'undefined') {
-			this.eval_paws(context, code, function(evaled){
+    function(context, text, code) {
+        var session = this.code_sessions[context.sender.name];
+        if (typeof session === 'undefined') {
+            this.eval_paws(context, code, function(evaled){
                             // TODO
                         });
-		} else {
-			clearTimeout(session.timeout);
-		        this.eval_paws(context, session.code + code, function(evaled){
+        } else {
+            clearTimeout(session.timeout);
+                this.eval_paws(context, session.code + code, function(evaled){
                             // TODO
                         });
-			delete this.code_sessions[context.sender.name];
-		}
-	});
+            delete this.code_sessions[context.sender.name];
+        }
+    });
 
     // I am ashamed of this code. Please kill me. -devyn
 
@@ -722,31 +722,31 @@ Purr.prototype.init = function() {
 //    var kicked = {};
 //    
 //    this.register_command ("kick", function(context, text) {
-//	if (this.isDick(context)) {
+//  if (this.isDick(context)) {
 //            var channel = context.channel, userlist, client = context.client;
 //            
 //            if (context.priv) {
-//		return channel.send_reply (context.sender, "Must be in the channel to !kick.");
+//      return channel.send_reply (context.sender, "Must be in the channel to !kick.");
 //            }
 //            
 //            userlist = channel.userlist;
 //            if (text.toLowerCase () === "everyone") {
-//		return channel.send_reply (context.sender, "Ha! Do I *look* like alexgordon?");
+//      return channel.send_reply (context.sender, "Ha! Do I *look* like alexgordon?");
 //            } else if (userlist.hasOwnProperty(text)) {
-//		client.raw (
+//      client.raw (
 //                    "KICK "+context.channel.name+" "+text+
-//			" :purr doesn't like you.");
+//          " :purr doesn't like you.");
 //            } else {
-//		return channel.send_reply (context.sender, "No one named `"+text+"` in the channel.");
+//      return channel.send_reply (context.sender, "No one named `"+text+"` in the channel.");
 //            }
-//	}
+//  }
 //    });
     
     
     this.register_command("twister", function(context) {
-	if (this.isDick(context)) {
+    if (this.isDick(context)) {
             context.channel.send(
-		rand(["Left ", "Right "]) +
+        rand(["Left ", "Right "]) +
                 rand(["foot on ", "hand on "]) +
                 rand(["red!", "yellow!", "green!", "blue!"]));
         }
@@ -852,14 +852,14 @@ Purr.prototype.sol = function (context, text) {
 };
 
 Purr.prototype.isDick = function(context) {
-	if (typeof context === 'undefined' || context.priv
+    if (typeof context === 'undefined' || context.priv
          || context.channel.name === '#purr' || context.channel.name === '#elliottcable'
          || context.channel.name === '#chats' ) {
-		var now = +new Date();
-		return (this.annoyban == undefined || this.annoyban < (now - 1000*60*60*24));
-	} else {
-		return false;
-	}
+        var now = +new Date();
+        return (this.annoyban == undefined || this.annoyban < (now - 1000*60*60*24));
+    } else {
+        return false;
+    }
 };
 
 Purr.prototype.love = function(context, lover, loved, d, opts) {
@@ -870,17 +870,17 @@ Purr.prototype.love = function(context, lover, loved, d, opts) {
 
     if ((c == 0 || c == 1) && d == 1 && loved.match(new RegExp('^'+lover+'$', 'i'))) {
         if (this.isDick(context)) context.channel.send("Let it be known that " + lover + " is an egotistical prick.");
-	return;
+    return;
     }
 
     if (d == -1 && loved.match(/^purr/i)) {
         if (this.isDick(context)) context.channel.send(lover + "-- (... dickface.)");
-	return;
+    return;
     }
 
     if ((c == 0 || c == 1) && d == 1 && loved.match(/^php$/i)) {
-	if (this.isDick(context)) context.channel.send(lover + ": I think you meant '-- PHP'.");
-	c = 0; d = -1;
+    if (this.isDick(context)) context.channel.send(lover + ": I think you meant '-- PHP'.");
+    c = 0; d = -1;
     }
 
     if (c + d > 0) {
@@ -898,19 +898,19 @@ Purr.prototype.love = function(context, lover, loved, d, opts) {
 
 Purr.prototype.eval_priv = function(context, command, code) {
     if (context.sender.access) {
-	try {
+    try {
             with (context) {
-		result = eval (code);
+        result = eval (code);
             }
-	} catch (e) {
+    } catch (e) {
             context.channel.send_reply (context.sender, e);
             return;
-	}
-	if (result != null) {
+    }
+    if (result != null) {
             context.channel.send_reply (context.sender, require("./purr-utils.js").pretty_print(result).substr(0, 400));
-	}
+    }
     } else {
-	Shared.execute_js.call(this, context, "", command, code);
+    Shared.execute_js.call(this, context, "", command, code);
     }
 };
 

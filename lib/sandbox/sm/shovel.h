@@ -2,33 +2,33 @@
 #define SHOVEL_H
 
 #define SANDBOX_THROW_ERROR_JS(sandbox, context) \
-	{ \
-		jsval exc; \
-		JSString *excstr; \
-		if (JS_GetPendingException (context, &exc)) { \
-			JS_ClearPendingException (context); \
-			excstr = JS_ValueToString (context, exc); \
-			if (excstr == NULL) { \
-				sandbox_throw_error (sandbox, "Second exception thrown when converting first exception into a string."); \
-			} \
-			sandbox_throw_error (sandbox, JS_EncodeString (context, excstr)); \
-		} \
-	}
+    { \
+        jsval exc; \
+        JSString *excstr; \
+        if (JS_GetPendingException (context, &exc)) { \
+            JS_ClearPendingException (context); \
+            excstr = JS_ValueToString (context, exc); \
+            if (excstr == NULL) { \
+                sandbox_throw_error (sandbox, "Second exception thrown when converting first exception into a string."); \
+            } \
+            sandbox_throw_error (sandbox, JS_EncodeString (context, excstr)); \
+        } \
+    }
 
 #define JS_THROW_SANDBOX_ERROR(cx, message) \
-	JS_ReportError(cx, "SandboxError: %s (in %s on line %d)", message, __FUNCTION__, __LINE__)
+    JS_ReportError(cx, "SandboxError: %s (in %s on line %d)", message, __FUNCTION__, __LINE__)
 
 #define L printf("line: %d\n", __LINE__);
 
 typedef struct {
-	JSContext  *context;
-	JSObject   *global;
+    JSContext  *context;
+    JSObject   *global;
 } SandboxContext;
 
 typedef struct {
-	JSRuntime  *runtime;
-	SandboxContext utils_context;
-	JSObject    *utils_exports;
+    JSRuntime  *runtime;
+    SandboxContext utils_context;
+    JSObject    *utils_exports;
 } Sandbox;
 
 typedef char* SandboxError;
