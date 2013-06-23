@@ -152,7 +152,6 @@ Purr.prototype.init = function() {
         });
     }
     var listeningTo = function(context, text){ var reply;
-        if (!this.isDick(context)) return;
         tinysong(context, text, 1, function(reply){
             if (/justin timberlake/i.test(reply[0].artist)) {
                 return context.client.raw(
@@ -164,7 +163,6 @@ Purr.prototype.init = function() {
     this.register_command ("listening", listeningTo);
     
     this.register_command("song", function(context, text){ var reply;
-        if (!this.isDick(context)) return;
         tinysong(context, text, 3, function(reply){
             reply = reply.map(function(song){
                 return song.song+' by '+song.artist+': '+song.URI }).join(', ');
