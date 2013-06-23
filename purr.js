@@ -151,13 +151,7 @@ Purr.prototype.init = function() {
                 cb(reply) }
         });
     }
-    this.register_command("song", function(context, text){ var reply;
-        if (!this.isDick(context)) return;
-        tinysong(context, text, 3, function(reply){
-            reply = reply.map(function(song){
-                return song.song+' by '+song.artist+': '+song.URI }).join(', ');
-            context.channel.send_reply(context.intent, reply, {color: true}) }) });
-    this.register_listener(/^♪\s+(.*)$/, function(context,_, text){ var reply;
+    var listeningTo = function(context, text){ var reply;
         if (!this.isDick(context)) return;
         tinysong(context, text, 1, function(reply){
             if (/justin timberlake/i.test(reply[0].artist)) {
@@ -165,7 +159,16 @@ Purr.prototype.init = function() {
                     "KICK "+context.channel.name+" "+context.sender.name+" : NO JUSTIN TIMBERLAKE.") }
             message = context.sender.name+" is listening to "+reply[0].song+", by "+reply[0].artist;
             context.channel.send(message, {color: true});
-            context.channel.send('('+reply[0].URI+')', {color: true}) }) });
+            context.channel.send('('+reply[0].URI+')', {color: true}) }) };
+    this.register_listener(/^♪\s+(.*)$/, function(ctx,_, text){ listeningTo(ctx, text) });
+    this.register_command ("listening", listeningTo);
+    
+    this.register_command("song", function(context, text){ var reply;
+        if (!this.isDick(context)) return;
+        tinysong(context, text, 3, function(reply){
+            reply = reply.map(function(song){
+                return song.song+' by '+song.artist+': '+song.URI }).join(', ');
+            context.channel.send_reply(context.intent, reply, {color: true}) }) });
     
     var rule34 = function(context, key_words, cb){ var
         key_words = key_words.map(function(word){ return word.split(/\s+/).join('_') }).join('+')
