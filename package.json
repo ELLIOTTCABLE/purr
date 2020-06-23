@@ -4,6 +4,9 @@
    "private": true,
    "version": "1.0.0",
    "main": "purr.js",
+   "scripts": {
+      "start": "bash ./purr-loop"
+   },
    "dependencies": {
       "request": "~2.88.2",
       "cheerio": "1.0.0-rc.3",
