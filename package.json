@@ -5,11 +5,13 @@
    "version": "1.0.0",
    "main": "purr.js",
    "scripts": {
-      "start": "bash ./purr-loop"
+      "start": "bash ./purr-loop",
+      "format": "prettier --ignore-path .gitignore --write '*.js' 'lib/**/*.js'"
    },
    "dependencies": {
-      "request": "^2.88.2",
       "cheerio": "^1.0.0-rc.3",
+      "prettier": "^2.0.5",
+      "request": "^2.88.2",
       "twss": "^0.1.6"
    }
 }
