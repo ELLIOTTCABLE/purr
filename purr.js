@@ -159,8 +159,6 @@ class Purr extends Bot {
 
       this.register_command('sol', this.sol)
 
-      this.password = 'white goo dreeping down my strema'
-
       var tinysong = function (context, song_name, number, cb) {
          var uri = 'http://tinysong.com/s/' + song_name.split(' ').join('+')
          console.log(uri)
@@ -338,19 +336,6 @@ class Purr extends Bot {
                )
             }, Math.floor(Math.random() * 4000))
       })
-
-      this.register_command(
-         'access',
-         function (context, text) {
-            if (context.priv && text === this.password) {
-               context.sender.access = true
-               context.channel.send_reply(context.sender, 'Access granted.')
-            } else {
-               context.channel.send_reply(context.sender, 'Incorrect password.')
-            }
-         },
-         {hidden: true},
-      )
 
       this.register_command('best', function (context, text) {
          text = text.toUpperCase()
