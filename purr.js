@@ -278,33 +278,8 @@ class Purr extends Bot {
       })
 
       this.register_command('purr', function (context) {
-         context.channel.send_action('')
+         context.channel.send('...')
       })
-
-      this.register_listener(
-         /^([a-z][a-z0-9_|-]{0,15}): +(?:["\u201C]([^"\u201D]+)["\u201D] )?[.\u2026 ]*wh?[au]tf?\.$/i,
-         function (context, text, subject, object) {
-            if (typeof object === 'undefined') {
-               object = this.last_message[subject + context.channel.name]
-               if (typeof object === 'undefined') {
-                  return context.channel.send_reply(
-                     context.sender,
-                     "can't find the referenced what.",
-                  )
-               }
-            }
-
-            var m = object.match(/^\x01ACTION ([^\x01]*)\x01$/)
-
-            if (m) {
-               this.what.object.push('* ' + subject + ' ' + m[1])
-            } else {
-               this.what.object.push('<' + subject + '> ' + object)
-            }
-            this.what.activity()
-            if (this.isDick(context)) context.channel.send('beep.')
-         },
-      )
 
       this.register_listener(/^\+what < *([^> ]+) *> +(.*)$/i, function (
          context,
@@ -327,15 +302,6 @@ class Purr extends Bot {
          }
       }
       this.register_command('what', this.what.random)
-
-      this.register_listener(/^\x01ACTION [^\x01]*purr[^\x01]*\x01$/, function (context) {
-         if (this.isDick(context))
-            setTimeout(function () {
-               context.channel.send_action(
-                  new Array(Math.floor(Math.random() * 7) + 2).join('r'),
-               )
-            }, Math.floor(Math.random() * 4000))
-      })
 
       this.register_command('best', function (context, text) {
          text = text.toUpperCase()
@@ -392,8 +358,8 @@ class Purr extends Bot {
                now > last_invocation + 3 * hours ||
                typeof last_invocation === 'undefined'
             ) {
-               context.channel.send_action(
-                  'scolds ' + context.sender.name + ' and puts them in a time out.',
+               context.channel.send(
+                  '*scolds ' + context.sender.name + ' and puts them in a time out.*',
                )
                this.last_invocation[context.sender] = now
             }
@@ -434,7 +400,7 @@ class Purr extends Bot {
       })
 
       this.register_listener(/[A-Z]\w+[A-Z]\w+ .*get along with.*/, function (context) {
-         if (this.isDick(context)) context.channel.send_action('shakes his head.')
+         if (this.isDick(context)) context.channel.send('*shakes his head.*')
       })
       this.register_listener(/get along/, function (context) {
          if (this.isDick(context)) context.channel.send('hah')
@@ -574,17 +540,6 @@ class Purr extends Bot {
          '-',
          function (context, loved) {
             this.love(context, context.sender.name, loved.trim(), -1)
-         },
-         {allow_intentions: false},
-      )
-
-      this.register_listener(
-         /^(?:\x01ACTION )?(?:<3|\u2665) +(.+)(?:\x01)?$/,
-         function (context, text, loved) {
-            this.love(context, context.sender.name, loved.trim(), +1, {
-               love: ' hearts ',
-               hard: true,
-            })
          },
          {allow_intentions: false},
       )
