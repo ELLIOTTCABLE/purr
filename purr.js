@@ -371,7 +371,7 @@ class Purr extends Bot {
                   'Popularity: ' +
                      info.popularity +
                      ', last changed by: ' +
-                     (info.modified_by || '<unknown>') +
+                     `${info.modified_by || '<unknown>'}` +
                      ', ' +
                      delta_time +
                      ' ago',
