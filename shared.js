@@ -12,17 +12,18 @@ function parse_regex_literal(text) {
    return [regex, regexparsed[2].replace(/\\\//g, '/')]
 }
 
+var old_topics = {}
+
 var Shared = (module.exports = {
    google: function (context, text) {
       FeelingLucky(text, function (data) {
          if (data) {
-            context.channel.send_reply(
-               context.intent,
+            context.send_to_intents(
                '\x02' + data.title + '\x0F \x032<' + data.url + '>\x0F',
                {color: true},
             )
          } else {
-            context.channel.send_reply(context.sender, 'No search results found.')
+            context.send_reply('No search results found.')
          }
       })
    },
@@ -33,8 +34,7 @@ var Shared = (module.exports = {
       switch (command) {
          case 'sm>':
          case 's>':
-            context.channel.send_reply(
-               context.sender,
+            context.send_reply(
                'Sorry, but the SpiderMonkey engine is not working — please use v8> or >>>.',
             )
             return
@@ -70,12 +70,9 @@ var Shared = (module.exports = {
                   reply += '; Console: ' + result.data.console.join(', ')
                }
 
-               context.channel.send_reply(context.intent, reply, {truncate: true})
+               context.send_to_intents(reply, {truncate: true})
             } catch (e) {
-               context.channel.send_reply(
-                  context.intent,
-                  'Unforeseen Error: ' + e.name + ': ' + e.message,
-               )
+               context.send_to_intents('Unforeseen Error: ' + e.name + ': ' + e.message)
             }
          },
          this,
@@ -98,18 +95,15 @@ var Shared = (module.exports = {
 
          if (alias) {
             var key = this.factoids.alias(factoid, value)
-            context.channel.send_reply(
-               context.sender,
-               'Learned `' + factoid + '` => `' + key + '`.',
-            )
+            context.send_reply('Learned `' + factoid + '` => `' + key + '`.')
             return
          }
 
          /* Setting the text of a factoid */
 
          if (operation === '=') {
-            this.factoids.learn(factoid, value, context.sender.name)
-            context.channel.send_reply(context.sender, 'Learned `' + factoid + '`.')
+            this.factoids.learn(factoid, value, context.sender.username)
+            context.send_reply('Learned `' + factoid + '`.')
             return
 
             /* Replacing the text of a factoid based on regular expression */
@@ -120,44 +114,38 @@ var Shared = (module.exports = {
             var result = old.replace(regex, regexinfo[1])
 
             if (old === result) {
-               context.channel.send_reply(context.sender, 'Nothing changed.')
+               context.send_reply('Nothing changed.')
             } else {
-               this.factoids.learn(factoid, result, context.sender.name)
-               context.channel.send_reply(
-                  context.sender,
-                  'Changed `' + factoid + '` to: ' + result,
-               )
+               this.factoids.learn(factoid, result, context.sender.username)
+               context.send_reply('Changed `' + factoid + '` to: ' + result)
             }
             return
          }
       } catch (e) {
-         context.channel.send_reply(context.sender, e)
+         context.send_reply(e)
       }
    },
 
    forget: function (context, text) {
       try {
          this.factoids.forget(text)
-         context.channel.send_reply(context.sender, "Forgot '" + text + "'.")
+         context.send_reply("Forgot '" + text + "'.")
       } catch (e) {
-         context.channel.send_reply(context.sender, e)
+         context.send_reply(e)
       }
    },
 
    commands: function (context, text) {
       var commands = this.get_commands()
       var trigger = this.__trigger
-      context.channel.send_reply(
-         context.intent,
+      context.send_to_intents(
          'Valid commands are: ' + trigger + commands.join(', ' + trigger),
       )
    },
 
    find: function (context, text) {
       try {
-         context.channel.send_reply(context.intent, this.factoids.find(text, true), {
-            color: true,
-         })
+         context.send_to_intents(this.factoids.find(text, true))
       } catch (e) {
          var reply = ['Could not find `' + text + '`.'],
             found = this.factoids.search(text)
@@ -173,7 +161,7 @@ var Shared = (module.exports = {
             reply.push(found.join(found.length - 2 ? ', ' : ' '))
          }
 
-         context.channel.send_reply(context.intent, reply.join(' '), {color: true})
+         context.send_to_intents(reply.join(' '), {color: true})
       }
    },
 
@@ -181,7 +169,7 @@ var Shared = (module.exports = {
       try {
          if (text) {
             if (text === 'revert') {
-               var oldtopic = context.channel.oldtopic
+               var oldtopic = old_topics[context.channel.id]
                if (oldtopic) {
                   set_topic(oldtopic)
                   return
@@ -196,22 +184,21 @@ var Shared = (module.exports = {
             var topic = context.channel.topic.replace(regex, regexinfo[1])
             if (topic === context.channel.topic) throw new Error('Nothing changed.')
 
-            set_topic(topic.replace(/\n/g, ' '))
+            set_topic(topic.replace(/\n/g, ' ')).catch(function (e) {
+               context.send_reply(e)
+            })
             //context.channel.set_topic(topic);
          } else {
-            context.channel.send_reply(context.intent, context.channel.topic)
+            context.send_to_intents(context.channel.topic)
          }
       } catch (e) {
-         context.channel.send_reply(context.sender, e)
+         context.send_reply(e)
       }
 
       function set_topic(topic) {
-         context.channel.set_topic(topic)
-         /*
-            context.channel.oldtopic = context.channel.topic;
-            context.client.get_user("ChanServ")
-                .send("TOPIC "+context.channel.name+" "+topic);
-*/
+         old_topics[context.message.channel.id] = context.channel.topic
+         context.send_reply(`Setting the topic to: ${topic}`)
+         return context.channel.setTopic(topic)
       }
    },
 })
