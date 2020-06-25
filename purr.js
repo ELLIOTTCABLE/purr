@@ -180,17 +180,13 @@ class Purr extends Bot {
                } else if (songs.length === 0)
                   context.channel.send_reply(context.sender, 'Song not found. ):')
                else {
-                  var blue = '\0o032',
-                     green = '\0o033',
-                     yellow = '\0o037',
-                     reset = '\0o17',
-                     reply = songs.map(function (song) {
-                        return {
-                           song: green + '“' + song.SongName + '”' + reset,
-                           artist: yellow + song.ArtistName + reset,
-                           URI: blue + '<' + song.Url + '>' + reset,
-                        }
-                     })
+                  var reply = songs.map(function (song) {
+                     return {
+                        song: '“' + song.SongName + '”',
+                        artist: song.ArtistName,
+                        URI: '<' + song.Url + '>',
+                     }
+                  })
                   cb(reply)
                }
             },
@@ -241,9 +237,7 @@ class Purr extends Bot {
                   return word.split(/\s+/).join('_')
                })
                .join('+'),
-            URI = 'http://rule34.paheal.net/post/list?search=' + key_words,
-            pink = '\0o0313',
-            reset = '\0o17'
+            URI = 'http://rule34.paheal.net/post/list?search=' + key_words
          request(URI, function (err, resp, body) {
             if (err) return console.log(err)
             $ = cheerio.load(body)
@@ -259,7 +253,7 @@ class Purr extends Bot {
                },
                function (err, resp, body) {
                   if (err) return console.log(err)
-                  cb(pink + '<' + body.data.url + '> [NSFW]' + reset)
+                  cb('<' + body.data.url + '> [NSFW]')
                },
             )
          })
@@ -1252,48 +1246,6 @@ class Purr extends Bot {
       }
    }
 }
-
-// FIXME: Extremely fragile monkey-patching of µpaws.js to allow all that complex debugging code to
-//        spit out colored text in IRC. >,>
-ANSI = paws.debug.ANSI
-ANSI.length = 0
-ANSI.reset = '\017'
-ANSI.bold = '\002'
-ANSI.underline = '\037'
-ANSI.negative = '\022'
-ANSI[00] = 'brwhite'
-ANSI[01] = 'black'
-ANSI[02] = 'blue'
-ANSI[03] = 'green'
-ANSI[04] = 'brred'
-ANSI[05] = 'red'
-ANSI[06] = 'magenta'
-ANSI[07] = 'yellow'
-ANSI[08] = 'bryellow'
-ANSI[09] = 'brgreen'
-ANSI[10] = 'cyan'
-ANSI[11] = 'brcyan'
-ANSI[12] = 'brblue'
-ANSI[13] = 'brmagenta'
-ANSI[14] = 'brblack'
-ANSI[15] = 'white'
-// FIXME: v- Doesn't handle nesting
-ANSI.wrap = function wrap_codes(start, end) {
-   if (end == null) end = ANSI.reset
-   return function wrap_text(text) {
-      return start + text + end
-   }
-}
-ANSI.regex = /\x1B\[([0-9]+(;[0-9]+)*)?m/g
-ANSI.strip = function strip(text) {
-   return text.replace(ANSI.regex, '')
-}
-ANSI.forEach(function (name, code) {
-   ANSI[name] = ANSI.wrap('\003' + code)
-})
-ANSI.bold = ANSI.wrap(ANSI.bold)
-ANSI.underline = ANSI.wrap(ANSI.underline)
-ANSI.negative = ANSI.wrap(ANSI.negative)
 
 var profile = require('./purr-profile.js')
 new Purr(profile).init()
