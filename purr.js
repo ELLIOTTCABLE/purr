@@ -9,7 +9,6 @@ var request = require('request')
 var cheerio = require('cheerio')
 
 var Bot = require('./lib/irc')
-var Client = require('./lib/irc/client')
 
 var Sol = require('./lib/sol')
 var Sandbox = require('./lib/sandbox')
@@ -79,28 +78,10 @@ class Purr extends Bot {
    init() {
       Bot.prototype.init.call(this)
 
-      var bot = this
-
-      this.on('connect', function (client) {
-         client.on('message', function (channel, user, text) {
-            bot.last_message[user.name + channel.name] = text
-         })
-
-         client.on('join', function (channel) {
-            channel.on('send', function (data) {
-               util.log(util.inspect(data))
-               var m = data.match(/^PRIVMSG (#[^ :]+) :(.*)/)
-               if (m) {
-                  bot.last_message['purr' + m[1]] = m[2]
-               }
-            })
-         })
-      })
-
       this.register_listener(
          /^\|\| (.*)/,
          function (ctx, _, code) {
-            var sess = this.code_session(ctx.sender.name)
+            var sess = this.code_session(ctx.sender)
             sess.code += code + '\n'
          },
          {allow_intentions: false},
@@ -108,7 +89,7 @@ class Purr extends Bot {
       this.register_listener(
          /^((?:sm?|v8?|js?|>>?)>)([^>].*)+/,
          function (ctx, _, mode, code) {
-            var sess = this.code_session(ctx.sender.name)
+            var sess = this.code_session(ctx.sender)
             this.eval_priv(ctx, mode, sess.code + code + '\n')
             sess.code = ''
          },
@@ -117,11 +98,8 @@ class Purr extends Bot {
       this.register_command(
          'uncode',
          function (ctx) {
-            this.clear_code_session(ctx.sender.name)
-            ctx.channel.send_reply(
-               ctx.sender,
-               'JS / Paws code sessions cleared for your nickname.',
-            )
+            this.clear_code_session(ctx.sender)
+            ctx.send_reply('JS / Paws code sessions cleared for your nickname.')
          },
          {allow_intentions: false},
       )
@@ -131,7 +109,10 @@ class Purr extends Bot {
       this.register_command(
          'learn',
          function (context) {
-            if (context.sender.name === 'gqbrielle' || context.sender.name === 'mix') {
+            if (
+               context.sender.username === 'gqbrielle' ||
+               context.sender.username === 'mix'
+            ) {
                var today = (new Date().getTime() / 86400) | 0
 
                if (this.gqLearnDay !== today) {
@@ -140,10 +121,7 @@ class Purr extends Bot {
                }
 
                if (this.gqLearn++ > 10) {
-                  context.channel.send_reply(
-                     context.sender,
-                     "I think you've had enough for one day.",
-                  )
+                  context.send_reply("I think you've had enough for one day.")
                } else {
                   Shared.learn.apply(this, arguments)
                }
@@ -176,9 +154,8 @@ class Purr extends Bot {
             function (err, res, songs) {
                if (err || songs.error) {
                   console.log(err, songs.error)
-                  context.channel.send_reply(context.sender, 'HTTP request failed. ):')
-               } else if (songs.length === 0)
-                  context.channel.send_reply(context.sender, 'Song not found. ):')
+                  context.send_reply('HTTP request failed. ):')
+               } else if (songs.length === 0) context.send_reply('Song not found. ):')
                else {
                   var reply = songs.map(function (song) {
                      return {
@@ -196,22 +173,17 @@ class Purr extends Bot {
          var reply
          tinysong(context, text, 1, function (reply) {
             if (/justin timberlake/i.test(reply[0].artist)) {
-               return context.client.raw(
-                  'KICK ' +
-                     context.channel.name +
-                     ' ' +
-                     context.sender.name +
-                     ' : NO JUSTIN TIMBERLAKE.',
+               return context.send_reply(
+                  'NO JUSTIN TIMBERLAKE. IF THIS WAS IRC I WOULD KICK YOU.',
                )
             }
             message =
-               context.sender.name +
+               `${context.sender}` +
                ' is listening to ' +
                reply[0].song +
                ', by ' +
                reply[0].artist
-            context.channel.send(message, {color: true})
-            context.channel.send('(' + reply[0].URI + ')', {color: true})
+            context.send(message + '\n(' + reply[0].URI + ')')
          })
       }
       this.register_listener(/^♪\s+(.*)$/, function (ctx, _, text) {
@@ -227,7 +199,7 @@ class Purr extends Bot {
                   return song.song + ' by ' + song.artist + ': ' + song.URI
                })
                .join(', ')
-            context.channel.send_reply(context.intent, reply, {color: true})
+            context.send_to_intents(reply)
          })
       })
 
@@ -261,10 +233,10 @@ class Purr extends Bot {
       this.register_command('34', function (context, text) {
          if (!this.isDick(context)) return
          rule34(context, text.split(/\s*,\s*/), function (link) {
-            context.channel.send_reply(context.intent, 'Here. ' + link, {color: true})
-            context.channel.send_reply(
-               context.sender,
-               context.sender.name === context.intent.name
+            context.send_to_intents('Here. ' + link)
+
+            context.send_reply(
+               context.intents.find((user) => context.sender.id == user.id)
                   ? "... if you had any sense, you wouldn't have asked."
                   : "(You're a dick.)",
             )
@@ -272,7 +244,7 @@ class Purr extends Bot {
       })
 
       this.register_command('purr', function (context) {
-         context.channel.send('...')
+         context.send_to_channel('...')
       })
 
       this.register_listener(/^\+what < *([^> ]+) *> +(.*)$/i, function (
@@ -283,16 +255,16 @@ class Purr extends Bot {
       ) {
          this.what.object.push('<' + subject + '> ' + object)
          this.what.activity()
-         context.channel.send('beep.')
+         context.send_to_channel('beep.')
       })
 
       this.what.random = function (context) {
          if (!this.isDick(context)) return
          var a = this.what.object
          if (a.length > 0) {
-            context.channel.send(a[(Math.random() * a.length) | 0])
+            context.send_to_channel(a[(Math.random() * a.length) | 0])
          } else {
-            context.channel.send_reply(context.sender, 'no data')
+            context.send_reply('no data')
          }
       }
       this.register_command('what', this.what.random)
@@ -305,7 +277,7 @@ class Purr extends Bot {
          } else {
             word = text
          }
-         context.channel.send(text.replace(/\s+/g, '') + ' IS BEST' + word)
+         context.send_to_channel(text.replace(/\s+/g, '') + ' IS BEST' + word)
       })
 
       this.register_command('factoid', function (context, text) {
@@ -313,10 +285,10 @@ class Purr extends Bot {
             name = text.trim()
          var info = factoids[name]
          if (typeof info === 'undefined') {
-            context.channel.send_reply(context.sender, 'Error: Factoid not found.')
+            context.send_reply('Error: Factoid not found.')
          } else {
             if (typeof info.alias !== 'undefined') {
-               context.channel.send_reply(context.sender, 'Alias: ' + info.alias)
+               context.send_reply('Alias: ' + info.alias)
             } else {
                var delta_time = '<unknown time>'
                if (typeof info.timestamp !== 'undefined') {
@@ -326,8 +298,7 @@ class Purr extends Bot {
                      false,
                   ).toString()
                }
-               context.channel.send_reply(
-                  context.intent,
+               context.send_to_intents(
                   'Popularity: ' +
                      info.popularity +
                      ', last changed by: ' +
@@ -342,8 +313,9 @@ class Purr extends Bot {
 
       this.register_listener(/^\x0F\x0F(.+)/, function (context, text, code) {
          var result
-         var last_invocation = this.last_invocation[context.sender.name]
+         var last_invocation = this.last_invocation[context.sender.id]
 
+         // TODO: This access model was written for IRC and no longer works in Discord.
          if (!context.sender.access) {
             var hours = 1000 * 60 * 60
             var now = +new Date()
@@ -352,10 +324,8 @@ class Purr extends Bot {
                now > last_invocation + 3 * hours ||
                typeof last_invocation === 'undefined'
             ) {
-               context.channel.send(
-                  '*scolds ' + context.sender.name + ' and puts them in a time out.*',
-               )
-               this.last_invocation[context.sender] = now
+               context.send(`*scolds ${context.sender} and puts them in a time out.*`)
+               this.last_invocation[context.sender.id] = now
             }
             return
          }
@@ -363,12 +333,11 @@ class Purr extends Bot {
          try {
             result = eval_with_context(context, code)
          } catch (e) {
-            context.channel.send_reply(context.sender, e)
+            context.send_reply(e)
             return
          }
          if (result != null) {
-            context.channel.send_reply(
-               context.sender,
+            context.send_reply(
                require('./purr-utils.js').pretty_print(result).substr(0, 400),
             )
          }
@@ -383,30 +352,29 @@ class Purr extends Bot {
             setTimeout(function () {
                self.lollable = true
             }, 3 * 60 * 1000)
-            context.channel.send(this.drinkable ? word + ' (DRINK!)' : word)
+            context.send(this.drinkable ? word + ' (DRINK!)' : word)
          }
       })
 
       this.register_command('play', function (context) {
          this.drinkable = true
-         context.channel.send("Let's play a game. It works like this:")
-         context.channel.send_reply(context.intent, 'DRINK!')
+         context.send("Let's play a game. It works like this:")
+         context.send_to_intents('DRINK!')
       })
 
       this.register_listener(/[A-Z]\w+[A-Z]\w+ .*get along with.*/, function (context) {
-         if (this.isDick(context)) context.channel.send('*shakes his head.*')
+         if (this.isDick(context)) context.send_to_channel('*shakes his head.*')
       })
       this.register_listener(/get along/, function (context) {
-         if (this.isDick(context)) context.channel.send('hah')
+         if (this.isDick(context)) context.send_to_channel('hah')
       })
 
       this.register_listener(/\*shrug\*|shrugs/, function (context) {
-         if (this.isDick(context)) context.channel.send('¯\\(º_o)/¯')
+         if (this.isDick(context)) context.send_to_channel('¯\\(º_o)/¯')
       })
 
       this.register_listener(/^\s*purr: i (?:like|love) you/i, function (context) {
-         if (this.isDick(context))
-            context.channel.send_reply(context.sender, 'thank you! ^_^')
+         if (this.isDick(context)) context.send_reply('thank you! ^_^')
       })
 
       this.comment = function (context) {
@@ -428,10 +396,7 @@ class Purr extends Bot {
             setTimeout(function () {
                this.insulted = false
             }, 86400 * 1000)
-            context.channel.send_reply(
-               context.sender,
-               'suck my cock. (relevant: because I have one)',
-            )
+            context.send_reply('suck my cock. (relevant: because I have one)')
          }
       })
       this.register_listener(
@@ -447,7 +412,7 @@ class Purr extends Bot {
                   responses.push(
                      match[0].replace(/she/i, '*he*').replace(/her/i, '*his*'),
                   )
-               context.channel.send_reply(context.sender, '... ' + responses.join(', '))
+               context.send_reply('... ' + responses.join(', '))
             }
          },
       )
@@ -455,7 +420,7 @@ class Purr extends Bot {
       this.register_listener(
          /purr.*\b(?:hi|hello)\b|\b(?:hi|hello)\b.*purr|^\s*hi\s*$/i,
          function (context) {
-            if (this.isDick(context)) context.channel.send_reply(context.sender, 'hi!')
+            if (this.isDick(context)) context.send_reply('hi!')
          },
       )
 
@@ -486,8 +451,7 @@ class Purr extends Bot {
          var now = +new Date()
          if (!this.isDick(context)) {
             var sol = new Sol((this.annoyban - now) / 86400000 + 1, false)
-            context.channel.send_reply(
-               context.intent,
+            context.send_to_intents(
                "I'll be a dick in " +
                   sol.toStupidString() +
                   ' (' +
@@ -495,21 +459,21 @@ class Purr extends Bot {
                   '); please wait patiently.',
             )
          } else {
-            context.channel.send_reply(context.intent, 'no. fuck you.')
+            context.send_to_intents('no. fuck you.')
          }
       })
 
       this.register_listener(
          /^\+\+\s*(.+)$/,
          function (context, text, loved) {
-            this.love(context, context.sender.name, loved.trim(), +1)
+            this.love(context, context.sender, loved.trim(), +1)
          },
          {allow_intentions: false},
       )
       this.register_listener(
          /^([^\s]+)\s*\+\+$/,
          function (context, text, loved) {
-            this.love(context, context.sender.name, loved.trim(), +1)
+            this.love(context, context.sender, loved.trim(), +1)
          },
          {allow_intentions: false},
       )
@@ -517,14 +481,14 @@ class Purr extends Bot {
       this.register_listener(
          /^--\s*(.+)$/,
          function (context, text, loved) {
-            this.love(context, context.sender.name, loved.trim(), -1)
+            this.love(context, context.sender, loved.trim(), -1)
          },
          {allow_intentions: false},
       )
       this.register_listener(
          /^([^\s]+)\s*--$/,
          function (context, text, loved) {
-            this.love(context, context.sender.name, loved.trim(), -1)
+            this.love(context, context.sender, loved.trim(), -1)
          },
          {allow_intentions: false},
       )
@@ -533,7 +497,7 @@ class Purr extends Bot {
       this.register_command(
          '-',
          function (context, loved) {
-            this.love(context, context.sender.name, loved.trim(), -1)
+            this.love(context, context.sender, loved.trim(), -1)
          },
          {allow_intentions: false},
       )
@@ -541,7 +505,7 @@ class Purr extends Bot {
       this.register_listener(
          /^\u0ca0_\u0ca0 +(.+)$/,
          function (context, text, loved) {
-            this.love(context, context.sender.name, loved.trim(), -1, {
+            this.love(context, context.sender, loved.trim(), -1, {
                hate: ' disapproves of ',
                hard: true,
             })
@@ -552,10 +516,7 @@ class Purr extends Bot {
       this.register_command('loves', function (context, text) {
          var t = this.loves.object[text.trim()]
          if (!t) {
-            context.channel.send_reply(
-               context.intent,
-               text.trim() + " doesn't love anything :(",
-            )
+            context.send_to_intents(text.trim() + " doesn't love anything :(")
             return
          }
          var a = []
@@ -565,19 +526,12 @@ class Purr extends Bot {
             }
          }
          if (a.length == 0) {
-            context.channel.send_reply(
-               context.intent,
-               text.trim() + " doesn't love anything :(",
-            )
+            context.send_to_intents(text.trim() + " doesn't love anything :(")
          } else if (a.length == 1) {
-            context.channel.send_reply(
-               context.intent,
-               text.trim() + ' loves ' + a[0] + '.',
-            )
+            context.send_to_intents(text.trim() + ' loves ' + a[0] + '.')
          } else {
             last = a.pop()
-            context.channel.send_reply(
-               context.intent,
+            context.send_to_intents(
                text.trim() +
                   ' loves ' +
                   a.join(', ') +
@@ -592,10 +546,7 @@ class Purr extends Bot {
       this.register_command('hates', function (context, text) {
          var t = this.loves.object[text.trim()]
          if (!t) {
-            context.channel.send_reply(
-               context.intent,
-               text.trim() + " doesn't hate anything :)",
-            )
+            context.send_to_intents(text.trim() + " doesn't hate anything :)")
             return
          }
          var a = []
@@ -605,19 +556,12 @@ class Purr extends Bot {
             }
          }
          if (a.length == 0) {
-            context.channel.send_reply(
-               context.intent,
-               text.trim() + " doesn't hate anything :)",
-            )
+            context.send_to_intents(text.trim() + " doesn't hate anything :)")
          } else if (a.length == 1) {
-            context.channel.send_reply(
-               context.intent,
-               text.trim() + ' hates ' + a[0] + '.',
-            )
+            context.send_to_intents(text.trim() + ' hates ' + a[0] + '.')
          } else {
             last = a.pop()
-            context.channel.send_reply(
-               context.intent,
+            context.send_to_intents(
                text.trim() +
                   ' hates ' +
                   a.join(', ') +
@@ -644,19 +588,12 @@ class Purr extends Bot {
          }
 
          if (a.length == 0) {
-            context.channel.send_reply(
-               context.intent,
-               text.trim() + ' is loved by no one :(',
-            )
+            context.send_to_intents(text.trim() + ' is loved by no one :(')
          } else if (a.length == 1) {
-            context.channel.send_reply(
-               context.intent,
-               text.trim() + ' is loved by ' + a[0] + '.',
-            )
+            context.send_to_intents(text.trim() + ' is loved by ' + a[0] + '.')
          } else {
             last = a.pop()
-            context.channel.send_reply(
-               context.intent,
+            context.send_to_intents(
                text.trim() +
                   ' is loved by ' +
                   a.join(', ') +
@@ -683,19 +620,12 @@ class Purr extends Bot {
          }
 
          if (a.length == 0) {
-            context.channel.send_reply(
-               context.intent,
-               text.trim() + ' is hated by no one :)',
-            )
+            context.send_to_intents(text.trim() + ' is hated by no one :)')
          } else if (a.length == 1) {
-            context.channel.send_reply(
-               context.intent,
-               text.trim() + ' is hated by ' + a[0] + '.',
-            )
+            context.send_to_intents(text.trim() + ' is hated by ' + a[0] + '.')
          } else {
             last = a.pop()
-            context.channel.send_reply(
-               context.intent,
+            context.send_to_intents(
                text.trim() +
                   ' is hated by ' +
                   a.join(', ') +
@@ -736,9 +666,9 @@ class Purr extends Bot {
             clearInterval(this.countdown_timer)
             this.countdown_timer = setInterval(function () {
                if (length > 0.1 || length < -0.1) {
-                  context.channel.send(String(((length * 1000) | 0) / 1000) + '...')
+                  context.send(String(((length * 1000) | 0) / 1000) + '...')
                } else {
-                  context.channel.send('Go!')
+                  context.send('Go!')
                   clearInterval(self.countdown_timer)
                }
                length -= decrement
@@ -750,39 +680,36 @@ class Purr extends Bot {
 
       this.queue = []
       this.register_command('queue', function (context, text) {
-         this.queue.push([context.sender, text])
+         this.queue.push([context.sender.id, text])
       })
       this.register_command('dequeue', function (context, text) {
          var item = text !== 'peek' ? this.queue.shift() : this.queue[0]
          if (item) {
-            context.channel.send('<' + item[0].name + '> ' + item[1])
+            context.send('<' + item[0].username + '> ' + item[1])
          } else {
-            context.channel.send_reply(context.sender, 'The queue is empty.')
+            context.send_reply('The queue is empty.')
          }
       })
 
       this.queue = {}
       this.register_command('queue', function (context, text) {
-         var who = context.intent.name
+         var who = context.intents[0].id
          if (!this.queue[who]) this.queue[who] = []
          this.queue[who].push([context.sender, text])
       })
       this.register_command('dequeue', function (context, text) {
-         var who = context.intent.name
+         var who = context.intents[0].id
          if (!this.queue[who]) this.queue[who] = []
          var item = text == 'peek' ? this.queue[who][0] : this.queue[who].shift()
          if (item) {
-            context.channel.send_reply(
-               context.intent,
-               '<' + item[0].name + '> ' + item[1],
-            )
+            context.send_to_intents('<' + item[0].username + '> ' + item[1])
          } else {
-            context.channel.send_reply(context.sender, 'The queue is empty.')
+            context.send_reply('The queue is empty.')
          }
       })
 
       this.register_listener(/^::([^>].*)+/, function (context, text, code) {
-         var session = this.code_sessions[context.sender.name]
+         var session = this.code_sessions[context.sender.id]
          if (typeof session === 'undefined') {
             this.eval_paws(context, code, function (evaled) {
                // TODO
@@ -792,7 +719,7 @@ class Purr extends Bot {
             this.eval_paws(context, session.code + code, function (evaled) {
                // TODO
             })
-            delete this.code_sessions[context.sender.name]
+            delete this.code_sessions[context.sender.id]
          }
       })
 
@@ -888,7 +815,7 @@ class Purr extends Bot {
          }
 
          if (Date.now() - startTime > 15000) {
-            context.channel.send_reply(context.sender, 'Timeout exceeded.')
+            context.send_reply(context.sender, 'Timeout exceeded.')
             return
          }
 
@@ -910,12 +837,11 @@ class Purr extends Bot {
          }
 
          if (output) {
-            context.channel.send_reply(
-               context.intent,
+            context.send_to_intents(
                memoryString.replace(/ $/, '. ') + 'Output: ' + JSON.stringify(output),
             )
          } else {
-            context.channel.send_reply(context.intent, memoryString)
+            context.send_to_intents(memoryString)
          }
 
          //}
@@ -946,7 +872,7 @@ class Purr extends Bot {
 
       this.register_command('twister', function (context) {
          if (this.isDick(context)) {
-            context.channel.send(
+            context.send(
                rand(['Left ', 'Right ']) +
                   rand(['foot on ', 'hand on ']) +
                   rand(['red!', 'yellow!', 'green!', 'blue!']),
@@ -965,7 +891,7 @@ class Purr extends Bot {
       }
 
       try {
-         context.channel.send_reply(context.intent, this.factoids.find(text, true), {
+         context.send_to_intents(cthis.factoids.find(text, true), {
             color: true,
          })
       } catch (e) {
@@ -997,30 +923,26 @@ class Purr extends Bot {
             if (f.flags.r && f.all.length == 2) {
                if (f.flags.s && f.args) {
                   // to relative gregorian from relative sol
-                  return context.channel.send_reply(
-                     context.intent,
+                  return context.send_to_intents(
                      Sol.parseSol(f.args, false).toStupidString(),
                   )
                } else if (f.flags.g && f.args) {
                   // to relative sol from relative gregorian
-                  return context.channel.send_reply(
-                     context.intent,
+                  return context.send_to_intents(
                      Sol.parseStupid(f.args, false).toString(),
                   )
                }
             } else if (f.flags.a && f.all.length == 2) {
                if (f.flags.s && f.args) {
                   // add a relative UJD to the current time and return the result in gregorian time
-                  return context.channel.send_reply(
-                     context.intent,
+                  return context.send_to_intents(
                      new Sol(
                         new Sol().floating + Sol.parseSol(f.args).floating,
                      ).toStupidString(),
                   )
                } else if (f.flags.g && f.args) {
                   // add a relative gregorian time to the current time and return the result as a UJD
-                  return context.channel.send_reply(
-                     context.intent,
+                  return context.send_to_intents(
                      new Sol(
                         new Sol().floating + Sol.parseStupid(f.args).floating,
                      ).toString(),
@@ -1029,49 +951,35 @@ class Purr extends Bot {
             } else if (f.all.length == 1) {
                if (f.flags.s && f.args) {
                   // to absolute gregorian from absolute sol
-                  return context.channel.send_reply(
-                     context.intent,
+                  return context.send_to_intents(
                      Sol.parseSol(f.args, true).toStupidString(),
                   )
                } else if (f.flags.g && f.args) {
                   // to absolute sol from absolute gregorian
-                  return context.channel.send_reply(
-                     context.intent,
-                     Sol.parseStupid(f.args, true).toString(),
-                  )
+                  return context.send_to_intents(Sol.parseStupid(f.args, true).toString())
                } else if (f.flags.h) {
                   var s = context.sender
-                  s.send(
-                     '----------------------------[ !sol command usage ]-----------------------------',
-                  )
-                  s.send('-sol')
-                  s.send('  Outputs the current time in the Unix-Julian Date format.')
-                  s.send('-sol -g <time>')
-                  s.send('  Converts an ISO 8601 Gregorian time to UJD.')
-                  s.send('-sol -gr <amount>')
-                  s.send(
-                     '  Converts a relative Gregorian amount (e.g. 8 months) to the equivalent',
-                  )
-                  s.send('  measurement in sols (ſ).')
-                  s.send('-sol -ga <amount>')
-                  s.send(
-                     '  Outputs the current time in UJD, advanced by <amount> specified in Gregorian',
-                  )
-                  s.send('  measurements.')
-                  s.send('-sol -s <time>')
-                  s.send(
-                     '  Converts a Unix-Julian Date to the conventional Gregorian format.',
-                  )
-                  s.send('-sol -sr <amount>')
-                  s.send(
-                     '  Converts an amount measured in sols (ſ) to a Gregorian-based amount.',
-                  )
-                  s.send('-sol -sa <amount>')
-                  s.send(
-                     '  Outputs the current UTC time in Gregorian, advanced by <amount> sols (ſ).',
-                  )
-                  s.send(
-                     '-------------------------------------------------------------------------------',
+                  context.send_dm(
+                     [
+                        '----------------------------[ !sol command usage ]-----------------------------',
+                        '-sol',
+                        '  Outputs the current time in the Unix-Julian Date format.',
+                        '-sol -g <time>',
+                        '  Converts an ISO 8601 Gregorian time to UJD.',
+                        '-sol -gr <amount>',
+                        '  Converts a relative Gregorian amount (e.g. 8 months) to the equivalent',
+                        '  measurement in sols (ſ).',
+                        '-sol -ga <amount>',
+                        '  Outputs the current time in UJD, advanced by <amount> specified in Gregorian',
+                        '  measurements.',
+                        '-sol -s <time>',
+                        '  Converts a Unix-Julian Date to the conventional Gregorian format.',
+                        '-sol -sr <amount>',
+                        '  Converts an amount measured in sols (ſ) to a Gregorian-based amount.',
+                        '-sol -sa <amount>',
+                        '  Outputs the current UTC time in Gregorian, advanced by <amount> sols (ſ).',
+                        '-------------------------------------------------------------------------------',
+                     ].join('\n'),
                   )
                   return
                }
@@ -1079,10 +987,9 @@ class Purr extends Bot {
          }
       } else {
          // current time in UJD
-         return context.channel.send_reply(context.intent, new Sol().toString())
+         return context.send_to_intents(new Sol().toString())
       }
-      context.channel.send_reply(
-         context.sender,
+      context.send_reply(
          "Invalid usage. If you invoke `-sol -h`, I'll PM you with instructions on how to use -sol.",
       )
    }
@@ -1091,9 +998,9 @@ class Purr extends Bot {
       if (
          typeof context === 'undefined' ||
          context.priv ||
-         context.channel.name === '#purr' ||
-         context.channel.name === '#elliottcable' ||
-         context.channel.name === '#chats'
+         context.channel.name === 'purr' ||
+         context.channel.name === 'elliottcable' ||
+         context.channel.name === 'chats'
       ) {
          var now = +new Date()
          return this.annoyban == undefined || this.annoyban < now - 1000 * 60 * 60 * 24
@@ -1102,57 +1009,51 @@ class Purr extends Bot {
       }
    }
 
+   // Arguments are user objects
    love(context, lover, loved, d, opts) {
       var opts = merge(
          {love: ' loves ', hate: ' hates ', zero: ' is indifferent to ', hard: false},
          opts,
       )
       var l = this.loves.object
-      if (!l[lover]) l[lover] = {}
+      if (!l[lover.id]) l[lover.id] = {}
       var c = opts.hard ? 0 : l[lover][loved] || 0
 
       if (
          (c == 0 || c == 1) &&
          d == 1 &&
-         loved.match(new RegExp('^' + lover + '$', 'i'))
+         loved.username.match(new RegExp('^' + `${lover}` + '$', 'i'))
       ) {
          if (this.isDick(context))
-            context.channel.send(
-               'Let it be known that ' + lover + ' is an egotistical prick.',
+            context.send_to_channel(
+               `Let it be known that ${lover} is an egotistical prick.`,
             )
          return
       }
 
       if (d == -1 && loved.match(/^purr/i)) {
-         if (this.isDick(context)) context.channel.send(lover + '-- (... dickface.)')
+         if (this.isDick(context)) context.send(`${lover}-- (... dickface.)`)
          return
       }
 
       if ((c == 0 || c == 1) && d == 1 && loved.match(/^php$/i)) {
-         if (this.isDick(context))
-            context.channel.send(lover + ": I think you meant '-- PHP'.")
+         if (this.isDick(context)) context.send(`${lover}: I think you meant '-- PHP'.`)
          c = 0
          d = -1
       }
 
       if (c + d > 0) {
          if (this.isDick(context))
-            context.channel.send(
-               'Let it be known that ' + lover + opts.love + loved + '.',
-            )
+            context.send(`Let it be known that ${lover} ${opts.love} ${loved}.`)
          l[lover][loved] = +1
       } else if (c + d < 0) {
          if (this.isDick(context))
-            context.channel.send(
-               'Let it be known that ' + lover + opts.hate + loved + '.',
-            )
+            context.send(`Let it be known that ${lover} ${opts.hate} ${loved}.`)
          l[lover][loved] = -1
       } else {
          if (this.isDick(context))
-            context.channel.send(
-               'Let it be known that ' + lover + opts.zero + loved + '.',
-            )
-         delete l[lover][loved]
+            context.send(`Let it be known that ${lover} ${opts.zero} ${loved}.`)
+         delete l[lover.id][loved.id]
       }
       this.loves.activity()
    }
@@ -1162,12 +1063,11 @@ class Purr extends Bot {
          try {
             result = eval_with_context(context, code)
          } catch (e) {
-            context.channel.send_reply(context.sender, e)
+            context.send_reply(e)
             return
          }
          if (result != null) {
-            context.channel.send_reply(
-               context.sender,
+            context.send_reply(
                require('./purr-utils.js').pretty_print(result).substr(0, 400),
             )
          }
@@ -1176,24 +1076,24 @@ class Purr extends Bot {
       }
    }
 
-   code_session(name) {
+   code_session(author) {
       var sess,
          sessions = this.code_sessions,
          timeout = setTimeout(function () {
-            delete sessions[name]
+            delete sessions[author.id]
          }, this.code_session_timeout * 1000)
-      if ((sess = sessions[name]) == null)
-         return (sessions[name] = {timeout: timeout, code: ''})
+      if ((sess = sessions[author.id]) == null)
+         return (sessions[author.id] = {timeout: timeout, code: ''})
       clearTimeout(sess.timeout)
       sess.timeout = timeout
       return sess
    }
 
-   clear_code_session(name) {
+   clear_code_session(author) {
       var sessions = this.code_sessions,
-         sess = sessions[name]
+         sess = sessions[author.id]
       if (sess != null) {
-         delete sessions[name]
+         delete sessions[author.id]
          clearTimeout(sess.timeout)
          if (sess.world) sess.world.stop() // TODO: This needs a proper timeout/kill.
          return sess
@@ -1204,7 +1104,7 @@ class Purr extends Bot {
    // TODO: Currently assumes single-line, multi-expression. Support multi-line with `void`.
    eval_paws(ctx, code, cb) {
       var obj,
-         sess = this.code_session(ctx.sender.name)
+         sess = this.code_session(ctx.sender)
 
       if (code.length > 0) {
          if (sess.world == null) {
@@ -1217,13 +1117,13 @@ class Purr extends Bot {
                   stop: paws.implementation.stop,
                   util: {
                      test: paws.Execution(function () {
-                        ctx.channel.send_reply(ctx.sender, 'test successful!')
+                        ctx.send_reply('test successful!')
                      }),
                      print: paws.Execution(function (label) {
-                        ctx.channel.send_reply(ctx.sender, label.string)
+                        ctx.send_reply(label.string)
                      }),
                      inspect: paws.Execution(function (thing) {
-                        ctx.channel.send(thing.inspect(), {color: true})
+                        ctx.send(thing.inspect(), {color: true})
                      }),
                   },
                   void: paws.implementation.void,
