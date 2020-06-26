@@ -30,16 +30,6 @@ var Shared = (module.exports = {
    execute_js: function (context, text, command, code) {
       var engine
 
-      /* This should be temporary. */
-      if (!context.priv) {
-         if (command === 'v8>' && context.channel.userlist['v8bot']) {
-            return
-         }
-         if (command === 'js>' && context.channel.userlist['gbot2']) {
-            return
-         }
-      }
-
       switch (command) {
          case 'sm>':
          case 's>':
