@@ -797,10 +797,6 @@ class Purr extends Bot {
          }
       })
 
-      this.on('invite', function (user, channel) {
-         channel.join()
-      })
-
       this.on('command_not_found', this.find)
 
       this.queue = []
