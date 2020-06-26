@@ -70,6 +70,8 @@ class Purr extends Bot {
       this.code_session_timeout = 120
       this.last_message = {}
 
+      this.last_invocation = {}
+
       this.set_log_level(this.LOG_ALL)
       this.set_trigger('-')
    }
@@ -395,19 +397,20 @@ class Purr extends Bot {
 
       this.register_listener(/^\x0F\x0F(.+)/, function (context, text, code) {
          var result
+         var last_invocation = this.last_invocation[context.sender.name]
 
          if (!context.sender.access) {
             var hours = 1000 * 60 * 60
             var now = +new Date()
 
             if (
-               now > context.sender.last_invocation + 3 * hours ||
-               typeof context.sender.last_invocation === 'undefined'
+               now > last_invocation + 3 * hours ||
+               typeof last_invocation === 'undefined'
             ) {
                context.channel.send_action(
                   'scolds ' + context.sender.name + ' and puts them in a time out.',
                )
-               context.sender.last_invocation = now
+               this.last_invocation[context.sender] = now
             }
             return
          }
