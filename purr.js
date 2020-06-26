@@ -815,10 +815,6 @@ class Purr extends Bot {
 
       this.on('command_not_found', this.find)
 
-      this.on('connect', function (client) {
-         //this.github_context = client;
-      })
-
       this.queue = []
       this.register_command('queue', function (context, text) {
          this.queue.push([context.sender, text])
