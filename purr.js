@@ -267,7 +267,16 @@ class Purr extends Bot {
             context.send_reply('no data')
          }
       }
+
       this.register_command('what', this.what.random)
+
+      this.register_command('access', function (context, text) {
+         if (context.has_access) {
+            context.send_reply('You have elevated access, congrats!')
+         } else {
+            context.send_reply('You do NOT have elevated access - shoo!')
+         }
+      })
 
       this.register_command('best', function (context, text) {
          text = text.toUpperCase()
@@ -315,8 +324,7 @@ class Purr extends Bot {
          var result
          var last_invocation = this.last_invocation[context.sender.id]
 
-         // TODO: This access model was written for IRC and no longer works in Discord.
-         if (!context.sender.access) {
+         if (!context.has_access) {
             var hours = 1000 * 60 * 60
             var now = +new Date()
 
@@ -1059,7 +1067,7 @@ class Purr extends Bot {
    }
 
    eval_priv(context, command, code) {
-      if (context.sender.access) {
+      if (context.has_access) {
          try {
             result = eval_with_context(context, code)
          } catch (e) {
