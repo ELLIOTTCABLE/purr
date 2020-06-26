@@ -8,7 +8,7 @@ var querystring = require('querystring')
 var request = require('request')
 var cheerio = require('cheerio')
 
-var Bot = require('./lib/irc')
+var Bot = require('./lib/discord')
 
 var Sol = require('./lib/sol')
 var Sandbox = require('./lib/sandbox')
