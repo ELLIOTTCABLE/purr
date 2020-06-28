@@ -102,7 +102,7 @@ var Shared = (module.exports = {
          /* Setting the text of a factoid */
 
          if (operation === '=') {
-            this.factoids.learn(factoid, value, context.sender.username)
+            this.factoids.learn(factoid, value, context.sender)
             context.send_reply('Learned `' + factoid + '`.')
             return
 
@@ -116,7 +116,7 @@ var Shared = (module.exports = {
             if (old === result) {
                context.send_reply('Nothing changed.')
             } else {
-               this.factoids.learn(factoid, result, context.sender.username)
+               this.factoids.learn(factoid, result, context.sender)
                context.send_reply('Changed `' + factoid + '` to: ' + result)
             }
             return

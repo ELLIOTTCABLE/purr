@@ -307,11 +307,34 @@ class Purr extends Bot {
                      false,
                   ).toString()
                }
+
+               var modified_by = null
+               if (info.modified_by) {
+                  if (info.modified_by.nickname) {
+                     modified_by = `@${info.modified_by.nickname}`
+
+                     var user = context.guild.members.cache.get(info.modified_by.id)
+
+                     if (info.modified_by.id) {
+                        var user = context.guild.members.cache.get(info.modified_by.id)
+                        if (user) {
+                           if (user.nickname != info.modified_by.nickname) {
+                              modified_by += `(<${info.modified_by.username}>)`
+                           }
+                        }
+                     }
+                  } else {
+                     modified_by = `<${info.modified_by.username}>`
+                  }
+               }
+
+               modified_by = modified_by || '<unknown>'
+
                context.send_to_intents(
                   'Popularity: ' +
                      info.popularity +
                      ', last changed by: ' +
-                     `${info.modified_by || '<unknown>'}` +
+                     modified_by +
                      ', ' +
                      delta_time +
                      ' ago',
@@ -899,7 +922,7 @@ class Purr extends Bot {
       }
 
       try {
-         context.send_to_intents(cthis.factoids.find(text, true), {
+         context.send_to_intents(this.factoids.find(text, true), {
             color: true,
          })
       } catch (e) {
