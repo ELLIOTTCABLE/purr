@@ -16,7 +16,7 @@ var FactoidServer = require('./lib/factoidserv')
 var JSONSaver = require('./lib/jsonsaver')
 var FeelingLucky = require('./lib/feelinglucky')
 
-var paws = require('./lib/µpaws.js/µpaws.js')
+var Paws = require('Paws.js')
 
 var Shared = require('./shared')
 
@@ -1138,42 +1138,52 @@ class Purr extends Bot {
          sess = this.code_session(ctx.sender)
 
       if (code.length > 0) {
-         if (sess.world == null) {
-            sess.world = new paws.World()
-            sess.world.start()
+         if (!sess.paws) {
+            var here = new Paws.reactor.Unit()
 
-            sess.globals = paws.Execution(new Function())
-            obj = {
-               implementation: {
-                  stop: paws.implementation.stop,
-                  util: {
-                     test: paws.Execution(function () {
-                        ctx.send_reply('test successful!')
-                     }),
-                     print: paws.Execution(function (label) {
-                        ctx.send_reply(label.string)
-                     }),
-                     inspect: paws.Execution(function (thing) {
-                        ctx.send(thing.inspect(), {color: true})
-                     }),
+            var locals = new Execution(Paws.parse(Paws.parse.prepare(''))).locals
+
+            locals.inject(Paws.primitives('infrastructure'))
+
+            var print = new Paws.Native((label) => {
+               ctx.send_reply(label.alien)
+            }).rename('<purr: print label>')
+
+            var inspect = new Paws.Native((result) => {
+               ctx.send_to_channel(Paws.inspect(result))
+            }).rename('<purr: inspect result>')
+
+            locals.inject(
+               Paws.Thing.with({names: true}).construct({
+                  implementation: {
+                     version: () => new Label(require('Paws.js/package.json').version),
+                     console: {print, inspect},
+                     stop: new Execution((_, here) => here.stop()),
+                     void: new Native(
+                        function (caller, $) {
+                           this.caller = caller
+                           this.original = this
+                           $.stage(this.caller, this.original.clone())
+                        },
+                        function (_, $) {
+                           $.stage(this.caller, this.original.clone())
+                        },
+                     ),
                   },
-                  void: paws.implementation.void,
-               },
-            }
-            obj.impl = obj.implementation
-            obj.infra = paws.infrastructure
-            sess.world.applyGlobals(sess.globals, obj)
-            sess.globals = sess.globals.locals
+               }),
+            )
+
+            here.start()
+            sess.paws = {here, locals}
          }
 
-         var expr = new paws.Expression(paws.implementation.void),
-            lines = code.split('\n').forEach(function (line) {
-               expr.append(new paws.Expression(paws.cPaws.parse(line)))
-            }),
-            exe = new paws.Execution(expr).name('<IRC eval>')
-         exe.locals = sess.globals
+         var expr = Paws.parse(`console.inspect [ ${code} ]`)
 
-         sess.world.stage(exe)
+         var exe = Paws.generateRoot(expr)
+         exe.locals = sess.paws.locals
+         exe.rename('<purr: interactive input>')
+
+         sess.paws.here.stage(exe)
       }
    }
 }
