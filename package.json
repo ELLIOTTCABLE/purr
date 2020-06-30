@@ -5,7 +5,7 @@
    "version": "1.0.0",
    "main": "purr.js",
    "scripts": {
-      "start": "bash ./purr-loop",
+      "start": "heroku local web",
       "format": "prettier --ignore-path .gitignore --write '*.js' 'lib/**/*.js'"
    },
    "dependencies": {
