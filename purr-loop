@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-trap exit SIGINT
-while [ 1 ]; do /usr/bin/env node purr.js; done

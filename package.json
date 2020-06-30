@@ -5,7 +5,7 @@
    "version": "1.0.0",
    "main": "purr.js",
    "scripts": {
-      "start": "bash ./purr-loop",
+      "start": "nodemon ./purr.js",
       "format": "prettier --ignore-path .gitignore --write '*.js' 'lib/**/*.js'"
    },
    "dependencies": {
@@ -14,5 +14,8 @@
       "prettier": "^2.0.5",
       "request": "^2.88.2",
       "twss": "^0.1.6"
+   },
+   "devDependencies": {
+      "nodemon": "^2.0.4"
    }
 }
