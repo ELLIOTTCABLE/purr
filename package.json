@@ -11,6 +11,7 @@
    "dependencies": {
       "cheerio": "^1.0.0-rc.3",
       "discord.js": "^12.2.0",
+      "redis": "^3.0.2",
       "request": "^2.88.2",
       "twss": "^0.1.6"
    },
