@@ -203,46 +203,6 @@ class Purr extends Bot {
          })
       })
 
-      var rule34 = function (context, key_words, cb) {
-         var key_words = key_words
-               .map(function (word) {
-                  return word.split(/\s+/).join('_')
-               })
-               .join('+'),
-            URI = 'http://rule34.paheal.net/post/list?search=' + key_words
-         request(URI, function (err, resp, body) {
-            if (err) return console.log(err)
-            $ = cheerio.load(body)
-            link = $(
-               "#image-list .shm-image-list .thumb a:contains('Image Only')",
-            ).first()
-            if (link.length < 1) return console.log('No results for ' + key_words)
-            request.get(
-               {
-                  uri: 'https://api-ssl.bitly.com/v3/shorten',
-                  qs: {longUrl: $(link).attr('href'), access_token: BITLY_TOKEN},
-                  json: true,
-               },
-               function (err, resp, body) {
-                  if (err) return console.log(err)
-                  cb('<' + body.data.url + '> [NSFW]')
-               },
-            )
-         })
-      }
-      this.register_command('34', function (context, text) {
-         if (!this.isDick(context)) return
-         rule34(context, text.split(/\s*,\s*/), function (link) {
-            context.send_to_intents('Here. ' + link)
-
-            context.send_reply(
-               context.intents.find((user) => context.sender.id == user.id)
-                  ? "... if you had any sense, you wouldn't have asked."
-                  : "(You're a dick.)",
-            )
-         })
-      })
-
       this.register_command('purr', function (context) {
          context.send_to_channel('...')
       })
