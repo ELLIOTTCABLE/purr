@@ -6,7 +6,7 @@
    "main": "purr.js",
    "scripts": {
       "start": "heroku local web",
-      "format": "prettier --ignore-path .gitignore --write '*.js' 'lib/**/*.js'"
+      "format": "prettier --ignore-path .gitignore --write '*.js' 'lib/**/*.js' 'scripts/**.js'"
    },
    "dependencies": {
       "cheerio": "^1.0.0-rc.3",
