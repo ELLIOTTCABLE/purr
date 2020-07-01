@@ -13,7 +13,7 @@ var Bot = require('./lib/discord')
 var Sol = require('./lib/sol')
 var Sandbox = require('./lib/sandbox')
 var FactoidServer = require('./lib/factoidserv')
-var RedisSaver = require('./lib/redissaver')
+var PGSaver = require('./lib/pgsaver')
 var FeelingLucky = require('./lib/feelinglucky')
 
 var paws = require('./lib/µpaws.js/µpaws.js')
@@ -59,9 +59,9 @@ class Purr extends Bot {
       super(profile)
 
       this.sandbox = new Sandbox(path.join(__dirname, 'purr-utils.js'))
-      this.factoids = new FactoidServer(profile.redis_url)
-      this.loves = new RedisSaver(profile.redis_url, 'loves')
-      this.what = new RedisSaver(profile.redis_url, 'what')
+      this.factoids = new FactoidServer(profile.pg_url)
+      this.loves = new PGSaver(profile.pg_url, 'loves')
+      this.what = new PGSaver(profile.pg_url, 'what')
 
       this.code_sessions = {}
       this.code_session_timeout = 120

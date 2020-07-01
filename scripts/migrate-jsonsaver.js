@@ -1,21 +1,22 @@
 #!/usr/bin/env node
+var path = require('path')
 
 var JSONSaver = require('../lib/jsonsaver')
-var RedisSaver = require('../lib/redissaver')
+var PGSaver = require('../lib/pgsaver')
 
 var filename = process.argv[2]
-var redis_url = process.argv[3]
+var pg_url = process.argv[3]
 
-if (!filename || !redis_url) {
-   console.log('USAGE: migrate-jsonsaver {path to file} {redis url}')
+if (!filename || !pg_url) {
+   console.log('USAGE: migrate-jsonsaver {path to file} {postgres url}')
    process.exit(0)
 }
 
 json = new JSONSaver(filename)
 
-redis = new RedisSaver(redis_url, 'factoids')
+pg = new PGSaver(pg_url, path.basename(filename, '.json').replace(/^purr-/, ''))
 
-redis.instantwrite = true
+pg.instantwrite = true
 
 var load_count = 2
 
@@ -28,9 +29,9 @@ json.on('loaded', () => {
    }
 })
 
-redis.on('loaded', () => {
-   console.log(`Current data loaded from ${redis_url}...`)
-   console.log(redis.object)
+pg.on('loaded', () => {
+   console.log(`Current data loaded from ${pg_url}...`)
+   console.log(pg.object)
    load_count--
    if (!load_count) {
       on_load()
@@ -38,12 +39,12 @@ redis.on('loaded', () => {
 })
 
 function on_load() {
-   console.log('Migrating data onto redis object...')
-   Object.assign(redis.object, json.object)
-   console.log('Flushing redis...')
-   redis.activity()
+   console.log('Migrating data onto postgres object...')
+   Object.assign(pg.object, json.object)
+   console.log('Flushing to postgres...')
+   pg.activity()
 
-   redis.on('flushed', () => {
+   pg.on('flushed', () => {
       console.log('Done.')
       process.exit()
    })
