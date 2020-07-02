@@ -873,26 +873,24 @@ class Purr extends Bot {
          }
       })
 
-      if (this.__profile.web_port) {
-         this._webserver = http.createServer((req, res) => {
-            res.status = 200
-            res.setHeader('content-type', 'text/html')
-            res.write(`
-             <html>
-                <head>
-                   <title>purr loves you!</title>
-                </head>
-                <body>
-                   <h1><span style="font-color: #f00;">&lt;3</span></h1>
-                </body>
-             </html>
-          `)
-         })
+      this._webserver = http.createServer((req, res) => {
+         res.status = 200
+         res.setHeader('content-type', 'text/html')
+         res.write(`
+           <html>
+              <head>
+                 <title>purr loves you!</title>
+              </head>
+              <body>
+                 <h1><span style="font-color: #f00;">&lt;3</span></h1>
+              </body>
+           </html>
+        `)
+      })
 
-         this._webserver.listen(this.__profile.web_port, () => {
-            console.log(`Listening on port ${this.__profile.web_port}`)
-         })
-      }
+      this._webserver.listen(this.__profile.web_port, () => {
+         console.log(`Listening on port ${this.__profile.web_port}`)
+      })
    }
 
    find(context, text) {
