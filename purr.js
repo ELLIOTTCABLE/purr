@@ -876,7 +876,7 @@ class Purr extends Bot {
       this._webserver = http.createServer((req, res) => {
          res.status = 200
          res.setHeader('content-type', 'text/html')
-         res.write(`
+         res.end(`
            <html>
               <head>
                  <title>purr loves you!</title>
