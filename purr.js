@@ -882,7 +882,7 @@ class Purr extends Bot {
                  <title>purr loves you!</title>
               </head>
               <body>
-                 <h1><span style="font-color: #f00;">&lt;3</span></h1>
+                 <h1><span style="color: #f00;">&lt;3</span></h1>
               </body>
            </html>
         `)
