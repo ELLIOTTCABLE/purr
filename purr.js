@@ -13,7 +13,7 @@ var Bot = require('./lib/discord')
 var Sol = require('./lib/sol')
 var Sandbox = require('./lib/sandbox')
 var FactoidServer = require('./lib/factoidserv')
-var JSONSaver = require('./lib/jsonsaver')
+var PGSaver = require('./lib/pgsaver')
 var FeelingLucky = require('./lib/feelinglucky')
 
 var paws = require('./lib/µpaws.js/µpaws.js')
@@ -59,11 +59,9 @@ class Purr extends Bot {
       super(profile)
 
       this.sandbox = new Sandbox(path.join(__dirname, 'purr-utils.js'))
-      this.factoids = new FactoidServer(
-         path.join(__dirname, 'data', 'purr-factoids.json'),
-      )
-      this.loves = new JSONSaver(path.join(__dirname, 'data', 'purr-loves.json'))
-      this.what = new JSONSaver(path.join(__dirname, 'data', 'purr-what.json'))
+      this.factoids = new FactoidServer(profile.pg_url)
+      this.loves = new PGSaver(profile.pg_url, 'loves')
+      this.what = new PGSaver(profile.pg_url, 'what')
 
       this.code_sessions = {}
       this.code_session_timeout = 120
@@ -521,7 +519,7 @@ class Purr extends Bot {
          } else if (a.length == 1) {
             context.send_to_intents(text.trim() + ' loves ' + a[0] + '.')
          } else {
-            last = a.pop()
+            const last = a.pop()
             context.send_to_intents(
                text.trim() +
                   ' loves ' +
@@ -873,6 +871,25 @@ class Purr extends Bot {
          function rand(a) {
             return a[(Math.random() * a.length) | 0]
          }
+      })
+
+      this._webserver = http.createServer((req, res) => {
+         res.status = 200
+         res.setHeader('content-type', 'text/html')
+         res.end(`
+           <html>
+              <head>
+                 <title>purr loves you!</title>
+              </head>
+              <body>
+                 <h1><span style="color: #f00;">&lt;3</span></h1>
+              </body>
+           </html>
+        `)
+      })
+
+      this._webserver.listen(this.__profile.web_port, () => {
+         console.log(`Listening on port ${this.__profile.web_port}`)
       })
    }
 
