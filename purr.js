@@ -519,7 +519,7 @@ class Purr extends Bot {
          } else if (a.length == 1) {
             context.send_to_intents(text.trim() + ' loves ' + a[0] + '.')
          } else {
-            last = a.pop()
+            const last = a.pop()
             context.send_to_intents(
                text.trim() +
                   ' loves ' +
